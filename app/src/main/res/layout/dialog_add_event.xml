@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Subject / title"
+        android:inputType="text" />
+
+    <Spinner
+        android:id="@+id/spDay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/etStart"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Start time (HH:mm, e.g. 09:00)"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/etEnd"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="End time (HH:mm, e.g. 10:30)"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/etRoom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Room (optional)"
+        android:inputType="text" />
+</LinearLayout>
