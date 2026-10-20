@@ -1,4 +1,4 @@
-package com.example.fluxora;
+git remote set-url origin https://github.com/htamim2580-crypto/Fluxora.gitpackage com.example.fluxora;
 
 import android.os.Bundle;
 
