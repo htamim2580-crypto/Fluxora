@@ -1,12 +1,18 @@
 package com.example.fluxora;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -25,7 +31,12 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String[] DAYS =
             {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-
+    private final ActivityResultLauncher<String[]> smsPermLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                if (Boolean.TRUE.equals(result.get(Manifest.permission.READ_SMS))) {
+                    SmsImporter.importAll(this);
+                }
+            });
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,8 +59,19 @@ public class MainActivity extends AppCompatActivity {
         db.routineDao().getAll().observe(this, events -> adapter.setItems(events));
 
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
+        binding.btnPayments.setOnClickListener(v -> startActivity(new Intent(this, PaymentsActivity.class)));
+        requestSmsPermissions();
     }
-
+    private void requestSmsPermissions() {
+        boolean granted =
+                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+                        && ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED;
+        if (granted) {
+            SmsImporter.importAll(this);
+        } else {
+            smsPermLauncher.launch(new String[]{Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS});
+        }
+    }
     private void showAddDialog() {
         DialogAddEventBinding d = DialogAddEventBinding.inflate(getLayoutInflater());
         d.spDay.setAdapter(new ArrayAdapter<>(this,
