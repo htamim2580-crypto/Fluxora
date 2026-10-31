@@ -21,28 +21,23 @@ public class SmsParser {
             "Transaction ID is\\s+(\\w+)\\s*\\.\\s*(\\d{10,13}) has recharged your account with ([\\d,]+(?:\\.\\d+)?) Taka",
             Pattern.CASE_INSENSITIVE);
 
-    // Your own number, so recharges from other people aren't counted as your spending.
-// (Move this into a settings screen later, since it's personal data.)
-    private static final String MY_NUMBER = "01513925315";
     /** Returns null if the SMS is not a bKash/Nagad transaction. */
-    public static Payment parse(String sender, String body) {
-        return parse(sender, body, System.currentTimeMillis());
-    }
-
-    public static Payment parse(String sender, String body, long receivedAt) {
+    public static Payment parse(String sender, String body, long receivedAt, String myNumber) {
         if (body == null) return null;
 
         Matcher op = OP_RECHARGE.matcher(body);
         if (op.find()) {
-            boolean mine = op.group(2).endsWith(MY_NUMBER.substring(1));
+            String digits = myNumber == null ? "" : myNumber.replaceAll("\\D", "");
+            boolean mine = digits.length() >= 10
+                    && op.group(2).endsWith(digits.substring(digits.length() - 10));
             Payment p = new Payment();
             p.provider = mine ? "BKASH" : "OPERATOR";
             p.kind = mine ? "RECHARGE" : "RECHARGE_RECEIVED";
             p.amount = toDouble(op.group(3));
             p.counterparty = "Mobile recharge";
             p.trxId = op.group(1);
-            p.balance = 0;                 // this SMS doesn't include a balance
-            p.timestamp = receivedAt;      // and no date, so use when the SMS arrived
+            p.balance = 0;
+            p.timestamp = receivedAt;
             p.category = "Recharge";
             p.rawSms = body;
             return p;

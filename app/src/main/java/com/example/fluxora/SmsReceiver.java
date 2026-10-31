@@ -19,7 +19,7 @@ public class SmsReceiver extends BroadcastReceiver {
         StringBuilder body = new StringBuilder();
         for (SmsMessage m : msgs) body.append(m.getMessageBody());
 
-        Payment p = SmsParser.parse(sender, body.toString());
+        Payment p = SmsParser.parse(sender, body.toString(), System.currentTimeMillis(), UserProfile.phone(context));
         if (p == null) return;
 
         PendingResult result = goAsync();

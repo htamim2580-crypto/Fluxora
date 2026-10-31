@@ -10,6 +10,8 @@ import com.example.fluxora.db.PaymentDao;
 public class SmsImporter {
     public static void importAll(Context context) {
         Context app = context.getApplicationContext();
+        String me = UserProfile.phone(app);
+
         AppDatabase.dbExecutor.execute(() -> {
             Cursor c = app.getContentResolver().query(
                     Telephony.Sms.Inbox.CONTENT_URI,
@@ -20,8 +22,8 @@ public class SmsImporter {
             if (c == null) return;
             PaymentDao dao = AppDatabase.get(app).paymentDao();
             while (c.moveToNext()) {
-                Payment p = SmsParser.parse(c.getString(0), c.getString(1), c.getLong(2));
-                if (p != null) dao.insert(p);   // duplicate TrxIDs are ignored
+                Payment p = SmsParser.parse(c.getString(0), c.getString(1), c.getLong(2), me);
+                if (p != null) dao.insert(p);
             }
             c.close();
         });

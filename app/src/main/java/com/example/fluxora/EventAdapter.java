@@ -16,7 +16,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.VH> {
     }
 
     private static final String[] DAYS =
-            {"", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+            {"", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
     private List<RoutineEvent> items = new ArrayList<>();
     private final OnEventLongClick listener;

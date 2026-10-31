@@ -1,10 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
 }
-
+def localProps = new Properties()
+def localFile = rootProject.file("local.properties")
+if (localFile.exists()) localProps.load(localFile.newDataInputStream())
 android {
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
     namespace 'com.example.fluxora'
     compileSdk {
@@ -12,6 +15,7 @@ android {
     }
 
     defaultConfig {
+        buildConfigField "String", "GEMINI_API_KEY", "\"${localProps.getProperty('GEMINI_API_KEY', '')}\""
         applicationId "com.example.fluxora"
         minSdk 29
         targetSdk 36
