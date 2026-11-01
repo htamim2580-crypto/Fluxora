@@ -6,6 +6,11 @@ import java.util.List;
 
 @Dao
 public interface RoutineDao {
+    @Query("SELECT * FROM routine_events")
+    List<RoutineEvent> getAllNow();
+
+    @Query("SELECT * FROM routine_events WHERE id = :id")
+    RoutineEvent getById(long id);
     @Insert
     long insert(RoutineEvent event);
 

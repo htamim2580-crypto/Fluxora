@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -43,7 +44,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-
+    private final ActivityResultLauncher<String> notifPermLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> { });
     private ActivityMainBinding binding;
     private AppDatabase db;
     private EventAdapter adapter;
@@ -140,16 +142,10 @@ public class MainActivity extends AppCompatActivity {
             refreshList();
         });
 
-        db.attendanceDao().getAll().observe(this, list -> {
-            attendanceList = list;
-            Map<String, int[]> stats = new HashMap<>();
-
-            for (Attendance a : list) {
-                int[] v = stats.computeIfAbsent(a.courseTitle, k -> new int[2]);
-                if (a.present) v[0]++;
-                v[1]++;
-            }
-            adapter.setStats(stats);
+        db.routineDao().getAll().observe(this, events -> {
+            allEvents = events;
+            refreshList();
+            ClassScheduler.scheduleAllAsync(this);
         });
 
         // Buttons
@@ -164,6 +160,12 @@ public class MainActivity extends AppCompatActivity {
 
         requestSmsPermissions();
         if (!UserProfile.isSet(this)) showProfileDialog(false);
+        NotificationHelper.createChannel(this);
+        if (Build.VERSION.SDK_INT >= 33
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
     }
 
     // ---------- day helpers ----------
@@ -288,8 +290,10 @@ public class MainActivity extends AppCompatActivity {
     private void confirmDelete(RoutineEvent event) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete \"" + event.title + "\"?")
-                .setPositiveButton("Delete", (dialog, which) ->
-                        AppDatabase.dbExecutor.execute(() -> db.routineDao().delete(event)))
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    ClassScheduler.cancel(this, event.id);
+                    AppDatabase.dbExecutor.execute(() -> db.routineDao().delete(event));
+                })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
@@ -396,6 +400,27 @@ public class MainActivity extends AppCompatActivity {
             UserProfile.save(this, roll, groups[d.spGroup.getSelectedItemPosition()],
                     d.etPhone.getText().toString().trim());
             dialog.dismiss();
+        });
+    }
+    private void applyAttendance(List<Attendance> list) {
+        attendanceList = list;
+        Map<String, int[]> stats = new HashMap<>();
+        for (Attendance a : list) {
+            android.util.Log.d("Fluxora", "row: " + a.courseTitle + " | " + a.date
+                    + " | " + a.startTime + " | present=" + a.present);
+            int[] v = stats.computeIfAbsent(a.courseTitle, k -> new int[2]);
+            if (a.present) v[0]++;
+            v[1]++;
+        }
+        adapter.setStats(stats);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AppDatabase.dbExecutor.execute(() -> {
+            List<Attendance> list = db.attendanceDao().getAllNow();
+            runOnUiThread(() -> applyAttendance(list));
         });
     }
 }
