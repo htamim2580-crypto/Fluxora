@@ -1,50 +1,75 @@
 package com.example.fluxora;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.fluxora.databinding.ItemEventBinding;
 import com.example.fluxora.db.RoutineEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.VH> {
 
-    public interface OnEventLongClick {
+    public interface Listener {
+        void onClick(RoutineEvent event);
         void onLongClick(RoutineEvent event);
     }
 
-    private static final String[] DAYS =
-            {"", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-
     private List<RoutineEvent> items = new ArrayList<>();
-    private final OnEventLongClick listener;
+    private Map<String, int[]> stats = new HashMap<>();   // course title -> {present, total}
+    private final Listener listener;
 
-    public EventAdapter(OnEventLongClick listener) {
+    public EventAdapter(Listener listener) {
         this.listener = listener;
     }
 
     public void setItems(List<RoutineEvent> newItems) {
-        this.items = newItems;
+        items = newItems;
+        notifyDataSetChanged();
+    }
+
+    public void setStats(Map<String, int[]> newStats) {
+        stats = newStats;
         notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        ItemEventBinding b = ItemEventBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
-        return new VH(b);
+        return new VH(ItemEventBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH holder, int position) {
+    public void onBindViewHolder(@NonNull VH h, int position) {
         RoutineEvent e = items.get(position);
-        holder.b.tvTitle.setText(e.title);
-        String day = (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) ? DAYS[e.dayOfWeek] : e.date;
-        holder.b.tvTime.setText(day + "  " + e.startTime + " - " + e.endTime);
-        holder.b.tvRoom.setText(e.room == null || e.room.isEmpty() ? "" : "Room: " + e.room);
-        holder.itemView.setOnLongClickListener(v -> {
+        h.b.tvStart.setText(e.startTime);
+        h.b.tvEnd.setText(e.endTime);
+        h.b.tvTitle.setText(e.title);
+
+        StringBuilder sub = new StringBuilder();
+        if (e.room != null && !e.room.isEmpty()) sub.append("Room ").append(e.room);
+        if (e.details != null && !e.details.isEmpty()) {
+            if (sub.length() > 0) sub.append(" · ");
+            sub.append(e.details);
+        }
+        h.b.tvRoom.setText(sub.toString());
+        h.b.tvRoom.setVisibility(sub.length() == 0 ? View.GONE : View.VISIBLE);
+
+        int[] s = stats.get(e.title);
+        if (s == null || s[1] == 0) {
+            h.b.tvAttendance.setText("Attendance: not recorded yet");
+        } else {
+            h.b.tvAttendance.setText(String.format(Locale.US, "Attended %d/%d (%d%%)",
+                    s[0], s[1], Math.round(100f * s[0] / s[1])));
+        }
+
+        h.itemView.setOnClickListener(v -> listener.onClick(e));
+        h.itemView.setOnLongClickListener(v -> {
             listener.onLongClick(e);
             return true;
         });

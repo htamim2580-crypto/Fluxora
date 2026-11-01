@@ -7,11 +7,12 @@ import androidx.room.RoomDatabase;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities = {RoutineEvent.class, Payment.class}, version = 1, exportSchema = false)
+@Database(entities = {RoutineEvent.class, Payment.class, Attendance.class}, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract RoutineDao routineDao();
     public abstract PaymentDao paymentDao();
+    public abstract AttendanceDao attendanceDao();
 
     private static volatile AppDatabase INSTANCE;
     public static final ExecutorService dbExecutor = Executors.newFixedThreadPool(2);
@@ -21,7 +22,9 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                            AppDatabase.class, "fluxora.db").build();
+                                    AppDatabase.class, "fluxora.db")
+                            .fallbackToDestructiveMigration()
+                            .build();
                 }
             }
         }

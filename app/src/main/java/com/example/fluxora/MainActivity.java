@@ -1,12 +1,14 @@
 package com.example.fluxora;
 
 import android.Manifest;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
@@ -25,12 +27,20 @@ import com.example.fluxora.databinding.ActivityMainBinding;
 import com.example.fluxora.databinding.DialogAddEventBinding;
 import com.example.fluxora.databinding.DialogProfileBinding;
 import com.example.fluxora.db.AppDatabase;
+import com.example.fluxora.db.Attendance;
 import com.example.fluxora.db.RoutineEvent;
+import com.google.android.material.tabs.TabLayout;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,10 +48,15 @@ public class MainActivity extends AppCompatActivity {
     private AppDatabase db;
     private EventAdapter adapter;
     private String routinePrompt;
+    private List<RoutineEvent> allEvents = new ArrayList<>();
+    private List<Attendance> attendanceList = new ArrayList<>();
+    private int selectedDay;   // 1 = Sunday ... 7 = Saturday
 
     // Week starts on Sunday: dayOfWeek 1 = Sunday ... 7 = Saturday
     private static final String[] DAYS =
             {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+    private static final String[] SHORT_DAYS =
+            {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
     private final ActivityResultLauncher<String[]> smsPermLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -90,14 +105,57 @@ public class MainActivity extends AppCompatActivity {
 
         db = AppDatabase.get(this);
 
-        adapter = new EventAdapter(this::confirmDelete);
+        // Adapter
+        adapter = new EventAdapter(new EventAdapter.Listener() {
+            @Override public void onClick(RoutineEvent e) {
+                showAttendanceDialog(e, latestDateFor(e.dayOfWeek));
+            }
+            @Override public void onLongClick(RoutineEvent e) {
+                confirmDelete(e);
+            }
+        });
         binding.rvEvents.setLayoutManager(new LinearLayoutManager(this));
         binding.rvEvents.setAdapter(adapter);
 
-        db.routineDao().getAll().observe(this, events -> adapter.setItems(events));
+        // Day tabs, today selected first
+        for (String d : SHORT_DAYS) {
+            binding.tabDays.addTab(binding.tabDays.newTab().setText(d));
+        }
+        selectedDay = todayNumber();
+        TabLayout.Tab todayTab = binding.tabDays.getTabAt(selectedDay - 1);
+        if (todayTab != null) todayTab.select();
+        binding.tabDays.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override public void onTabSelected(TabLayout.Tab tab) {
+                selectedDay = tab.getPosition() + 1;
+                refreshList();
+            }
+            @Override public void onTabUnselected(TabLayout.Tab tab) { }
+            @Override public void onTabReselected(TabLayout.Tab tab) { }
+        });
 
+        // Data
+        db.routineDao().getAll().observe(this, events -> {
+            allEvents = events;
+
+            refreshList();
+        });
+
+        db.attendanceDao().getAll().observe(this, list -> {
+            attendanceList = list;
+            Map<String, int[]> stats = new HashMap<>();
+
+            for (Attendance a : list) {
+                int[] v = stats.computeIfAbsent(a.courseTitle, k -> new int[2]);
+                if (a.present) v[0]++;
+                v[1]++;
+            }
+            adapter.setStats(stats);
+        });
+
+        // Buttons
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
         binding.btnPayments.setOnClickListener(v -> startActivity(new Intent(this, PaymentsActivity.class)));
+        binding.btnAttendance.setOnClickListener(v -> startActivity(new Intent(this, AttendanceActivity.class)));
         binding.btnImport.setOnClickListener(v -> {
             routinePrompt = buildRoutinePrompt(UserProfile.section(this), UserProfile.group(this));
             imagePicker.launch("image/*");
@@ -107,6 +165,82 @@ public class MainActivity extends AppCompatActivity {
         requestSmsPermissions();
         if (!UserProfile.isSet(this)) showProfileDialog(false);
     }
+
+    // ---------- day helpers ----------
+
+    /** 1 = Sunday ... 7 = Saturday */
+    private int todayNumber() {
+        return LocalDate.now().getDayOfWeek().getValue() % 7 + 1;
+    }
+
+    /** Most recent date (today or earlier) that falls on the given day number. */
+    private LocalDate latestDateFor(int dayNum) {
+        LocalDate today = LocalDate.now();
+        if (dayNum < 1 || dayNum > 7) return today;
+        int diff = (todayNumber() - dayNum + 7) % 7;
+        return today.minusDays(diff);
+    }
+
+    private void refreshList() {
+        List<RoutineEvent> filtered = new ArrayList<>();
+        for (RoutineEvent e : allEvents) {
+            if (e.dayOfWeek == selectedDay) filtered.add(e);
+        }
+        adapter.setItems(filtered);
+        binding.tvEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+    private String statusFor(RoutineEvent event, LocalDate date) {
+        for (Attendance a : attendanceList) {
+            if (java.util.Objects.equals(a.courseTitle, event.title)
+                    && java.util.Objects.equals(a.date, date.toString())
+                    && java.util.Objects.equals(a.startTime, event.startTime)) {
+                return a.present ? "Present" : "Absent";
+            }
+        }
+        return "Not recorded";
+    }
+    // ---------- attendance ----------
+
+    private void showAttendanceDialog(RoutineEvent event, LocalDate date) {
+        String label = date.format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy", Locale.US));
+        String[] options = {"Present", "Absent", "Remove record", "Change date…"};
+        new AlertDialog.Builder(this)
+                .setTitle(event.title + "\n" + label + " · " + statusFor(event, date))
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0: saveAttendance(event, date, true); break;
+                        case 1: saveAttendance(event, date, false); break;
+                        case 2: removeAttendance(event, date); break;
+                        case 3: pickDate(event, date); break;
+                    }
+                })
+                .show();
+    }
+
+    private void pickDate(RoutineEvent event, LocalDate current) {
+        new DatePickerDialog(this,
+                (view, y, m, d) -> showAttendanceDialog(event, LocalDate.of(y, m + 1, d)),
+                current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth()).show();
+    }
+
+    private void saveAttendance(RoutineEvent event, LocalDate date, boolean present) {
+        Attendance a = new Attendance();
+        a.courseTitle = event.title;
+        a.date = date.toString();
+        a.startTime = event.startTime;
+        a.present = present;
+        AppDatabase.dbExecutor.execute(() -> db.attendanceDao().upsert(a));
+        String label = date.format(DateTimeFormatter.ofPattern("EEE, dd MMM", Locale.US));
+        Toast.makeText(this, (present ? "Present" : "Absent") + " saved for " + label,
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void removeAttendance(RoutineEvent event, LocalDate date) {
+        AppDatabase.dbExecutor.execute(() ->
+                db.attendanceDao().remove(event.title, date.toString(), event.startTime));
+    }
+
+    // ---------- SMS ----------
 
     private void requestSmsPermissions() {
         boolean granted =
@@ -119,10 +253,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // ---------- add / delete ----------
+
     private void showAddDialog() {
         DialogAddEventBinding d = DialogAddEventBinding.inflate(getLayoutInflater());
         d.spDay.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, DAYS));
+        d.spDay.setSelection(selectedDay - 1);
 
         new AlertDialog.Builder(this)
                 .setTitle("Add to routine")
@@ -156,6 +293,8 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
+    // ---------- photo import ----------
 
     private Bitmap loadScaled(Uri uri) throws IOException {
         BitmapFactory.Options o = new BitmapFactory.Options();
@@ -227,6 +366,8 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
+    // ---------- profile ----------
 
     private void showProfileDialog(boolean editing) {
         DialogProfileBinding d = DialogProfileBinding.inflate(getLayoutInflater());
