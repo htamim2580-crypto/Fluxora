@@ -6,6 +6,8 @@ import java.util.List;
 
 @Dao
 public interface RoutineDao {
+    @Query("SELECT COUNT(*) FROM routine_events WHERE type = 'CANCELLED' AND title = :title AND date = :date")
+    int countCancelled(String title, String date);
     @Query("SELECT * FROM routine_events")
     List<RoutineEvent> getAllNow();
 

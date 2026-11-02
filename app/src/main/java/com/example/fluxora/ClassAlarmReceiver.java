@@ -17,9 +17,19 @@ public class ClassAlarmReceiver extends BroadcastReceiver {
         AppDatabase.dbExecutor.execute(() -> {
             try {
                 RoutineEvent e = AppDatabase.get(context).routineDao().getById(eventId);
-                if (e == null) return;                         // class was deleted
-                NotificationHelper.showClassNotification(context, e, date);
-                ClassScheduler.scheduleEvent(context, e);      // next week's alarm
+                if (e == null) return;                                   // item was deleted
+
+                if (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) {
+                    // Weekly class: skip if it was cancelled for this date, then set next week's alarm
+                    boolean cancelled = AppDatabase.get(context).routineDao()
+                            .countCancelled(e.title, date) > 0;
+                    if (!cancelled) NotificationHelper.showClassNotification(context, e, date);
+                    ClassScheduler.scheduleEvent(context, e);
+                } else if ("EXTRA_CLASS".equals(e.type)) {
+                    NotificationHelper.showClassNotification(context, e, date);
+                } else {
+                    NotificationHelper.showReminder(context, e);
+                }
             } finally {
                 result.finish();
             }

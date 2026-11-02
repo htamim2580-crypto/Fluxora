@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.fluxora.databinding.ItemEventBinding;
 import com.example.fluxora.db.RoutineEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,26 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.VH> {
         notifyDataSetChanged();
     }
 
+    public static String typeLabel(String type) {
+        if (type == null) return "Item";
+        switch (type) {
+            case "EXTRA_CLASS": return "Extra class";
+            case "CANCELLED": return "Cancelled";
+            case "ASSIGNMENT": return "Assignment";
+            case "DEADLINE": return "Deadline";
+            case "CLASS": return "Class";
+            default: return "Note";
+        }
+    }
+
+    private static String shortDate(String iso) {
+        try {
+            return LocalDate.parse(iso).format(DateTimeFormatter.ofPattern("dd MMM", Locale.US));
+        } catch (Exception e) {
+            return iso;
+        }
+    }
+
     @NonNull
     @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -47,8 +69,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.VH> {
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         RoutineEvent e = items.get(position);
-        h.b.tvStart.setText(e.startTime);
-        h.b.tvEnd.setText(e.endTime);
+        boolean dated = e.dayOfWeek == 0 && e.date != null;
+
         h.b.tvTitle.setText(e.title);
 
         StringBuilder sub = new StringBuilder();
@@ -61,11 +83,23 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.VH> {
         h.b.tvRoom.setVisibility(sub.length() == 0 ? View.GONE : View.VISIBLE);
 
         int[] s = stats.get(e.title);
-        if (s == null || s[1] == 0) {
-            h.b.tvAttendance.setText("Attendance: not recorded yet");
+        if (dated) {
+            h.b.tvStart.setText(shortDate(e.date));
+            h.b.tvEnd.setText(e.startTime == null ? "" : e.startTime);
+            String label = typeLabel(e.type);
+            if ("EXTRA_CLASS".equals(e.type) && s != null && s[1] > 0) {
+                label += String.format(Locale.US, " · Attended %d/%d", s[0], s[1]);
+            }
+            h.b.tvAttendance.setText(label);
         } else {
-            h.b.tvAttendance.setText(String.format(Locale.US, "Attended %d/%d (%d%%)",
-                    s[0], s[1], Math.round(100f * s[0] / s[1])));
+            h.b.tvStart.setText(e.startTime);
+            h.b.tvEnd.setText(e.endTime);
+            if (s == null || s[1] == 0) {
+                h.b.tvAttendance.setText("Attendance: not recorded yet");
+            } else {
+                h.b.tvAttendance.setText(String.format(Locale.US, "Attended %d/%d (%d%%)",
+                        s[0], s[1], Math.round(100f * s[0] / s[1])));
+            }
         }
 
         h.itemView.setOnClickListener(v -> listener.onClick(e));

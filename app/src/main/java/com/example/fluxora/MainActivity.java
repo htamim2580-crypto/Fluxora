@@ -36,29 +36,35 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    private final ActivityResultLauncher<String> notifPermLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> { });
+
     private ActivityMainBinding binding;
     private AppDatabase db;
     private EventAdapter adapter;
     private String routinePrompt;
     private List<RoutineEvent> allEvents = new ArrayList<>();
     private List<Attendance> attendanceList = new ArrayList<>();
-    private int selectedDay;   // 1 = Sunday ... 7 = Saturday
+    private int selectedDay;   // 1 = Sunday ... 7 = Saturday, 8 = Upcoming
+
+    private static final int UPCOMING_TAB = 8;
 
     // Week starts on Sunday: dayOfWeek 1 = Sunday ... 7 = Saturday
     private static final String[] DAYS =
             {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final String[] SHORT_DAYS =
             {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+
+    private final ActivityResultLauncher<String> notifPermLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> { });
 
     private final ActivityResultLauncher<String[]> smsPermLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -71,6 +77,8 @@ public class MainActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) importRoutineFrom(uri);
             });
+
+    // ---------- prompts ----------
 
     private String buildRoutinePrompt(String section, String group) {
         return "This is a university class routine with two sections (SEC - A and SEC - B), "
@@ -92,6 +100,45 @@ public class MainActivity extends AppCompatActivity {
                 + "If nothing is readable, return [].";
     }
 
+    private String buildChatPrompt(String message) {
+        LocalDate today = LocalDate.now();
+        String todayStr = today.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.US) + " " + today;
+
+        Map<String, List<String>> byTitle = new LinkedHashMap<>();
+        for (RoutineEvent e : allEvents) {
+            if (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) {
+                byTitle.computeIfAbsent(e.title, k -> new ArrayList<>())
+                        .add(SHORT_DAYS[e.dayOfWeek - 1] + " " + e.startTime);
+            }
+        }
+        StringBuilder courses = new StringBuilder();
+        for (Map.Entry<String, List<String>> en : byTitle.entrySet()) {
+            courses.append("- ").append(en.getKey())
+                    .append(" (").append(String.join(", ", en.getValue())).append(")\n");
+        }
+        if (courses.length() == 0) courses.append("(no classes saved yet)\n");
+
+        return "You turn a student's short message into items for their class routine.\n"
+                + "Today is " + todayStr + ". The week starts on Sunday and classes run Sunday to Thursday.\n"
+                + "The student's regular classes (use these exact titles when the message refers to one):\n"
+                + courses
+                + "Message: \"" + message.replace("\"", "'") + "\"\n"
+                + "Return ONLY a JSON array (an empty array if there is nothing to add). Each item:\n"
+                + "{\"type\": one of EXTRA_CLASS, CANCELLED, ASSIGNMENT, DEADLINE, OTHER, "
+                + "\"title\": the exact course title from the list when the message refers to one, otherwise a short title, "
+                + "\"date\": \"yyyy-MM-dd\" (work out words like tomorrow, Sunday or next Thursday from today's date), "
+                + "\"startTime\": \"HH:mm\" in 24-hour time, or \"\" if not mentioned, "
+                + "\"endTime\": \"HH:mm\" or \"\", \"room\": \"\" if not mentioned, "
+                + "\"details\": short extra info such as assignment topic, marks or what to submit}\n"
+                + "Rules:\n"
+                + "- A cancelled regular class is type CANCELLED, with the class's usual startTime from the list.\n"
+                + "- If a regular class is moved, return two items: CANCELLED for the original date and EXTRA_CLASS for the new date and time.\n"
+                + "- ASSIGNMENT: date is the due date. DEADLINE: any other deadline. OTHER: quizzes, tests and notes.\n"
+                + "- Every item needs a date. Do not invent details that were not in the message.";
+    }
+
+    // ---------- lifecycle ----------
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,7 +147,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets bars = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
             return insets;
         });
@@ -110,7 +158,13 @@ public class MainActivity extends AppCompatActivity {
         // Adapter
         adapter = new EventAdapter(new EventAdapter.Listener() {
             @Override public void onClick(RoutineEvent e) {
-                showAttendanceDialog(e, latestDateFor(e.dayOfWeek));
+                if (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) {
+                    showAttendanceDialog(e, latestDateFor(e.dayOfWeek));
+                } else if ("EXTRA_CLASS".equals(e.type) && e.date != null) {
+                    showAttendanceDialog(e, LocalDate.parse(e.date));
+                } else {
+                    showInfo(e);
+                }
             }
             @Override public void onLongClick(RoutineEvent e) {
                 confirmDelete(e);
@@ -119,10 +173,11 @@ public class MainActivity extends AppCompatActivity {
         binding.rvEvents.setLayoutManager(new LinearLayoutManager(this));
         binding.rvEvents.setAdapter(adapter);
 
-        // Day tabs, today selected first
+        // Day tabs (Sun..Sat + Upcoming), today selected first
         for (String d : SHORT_DAYS) {
             binding.tabDays.addTab(binding.tabDays.newTab().setText(d));
         }
+        binding.tabDays.addTab(binding.tabDays.newTab().setText("Upcoming"));
         selectedDay = todayNumber();
         TabLayout.Tab todayTab = binding.tabDays.getTabAt(selectedDay - 1);
         if (todayTab != null) todayTab.select();
@@ -141,11 +196,11 @@ public class MainActivity extends AppCompatActivity {
             refreshList();
             ClassScheduler.scheduleAllAsync(this);
         });
-
         db.attendanceDao().getAll().observe(this, list -> applyAttendance(list));
 
         // Buttons
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
+        binding.btnSend.setOnClickListener(v -> sendChat());
         binding.btnPayments.setOnClickListener(v -> startActivity(new Intent(this, PaymentsActivity.class)));
         binding.btnAttendance.setOnClickListener(v -> startActivity(new Intent(this, AttendanceActivity.class)));
         binding.btnImport.setOnClickListener(v -> {
@@ -164,6 +219,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AppDatabase.dbExecutor.execute(() -> {
+            List<Attendance> list = db.attendanceDao().getAllNow();
+            runOnUiThread(() -> applyAttendance(list));
+        });
+    }
+
     // ---------- day helpers ----------
 
     /** 1 = Sunday ... 7 = Saturday */
@@ -179,14 +243,43 @@ public class MainActivity extends AppCompatActivity {
         return today.minusDays(diff);
     }
 
+    private static String nz(String s) {
+        return s == null ? "" : s;
+    }
+
     private void refreshList() {
         List<RoutineEvent> filtered = new ArrayList<>();
-        for (RoutineEvent e : allEvents) {
-            if (e.dayOfWeek == selectedDay) filtered.add(e);
+        if (selectedDay == UPCOMING_TAB) {
+            String today = LocalDate.now().toString();
+            for (RoutineEvent e : allEvents) {
+                if (e.dayOfWeek == 0 && e.date != null && e.date.compareTo(today) >= 0) filtered.add(e);
+            }
+            filtered.sort((a, b) ->
+                    (a.date + " " + nz(a.startTime)).compareTo(b.date + " " + nz(b.startTime)));
+            binding.tvEmpty.setText("Nothing upcoming");
+        } else {
+            for (RoutineEvent e : allEvents) {
+                if (e.dayOfWeek == selectedDay) filtered.add(e);
+            }
+            binding.tvEmpty.setText("No classes on this day");
         }
         adapter.setItems(filtered);
         binding.tvEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
     }
+
+    // ---------- attendance ----------
+
+    private void applyAttendance(List<Attendance> list) {
+        attendanceList = list;
+        Map<String, int[]> stats = new HashMap<>();
+        for (Attendance a : list) {
+            int[] v = stats.computeIfAbsent(a.courseTitle, k -> new int[2]);
+            if (a.present) v[0]++;
+            v[1]++;
+        }
+        adapter.setStats(stats);
+    }
+
     private String statusFor(RoutineEvent event, LocalDate date) {
         for (Attendance a : attendanceList) {
             if (java.util.Objects.equals(a.courseTitle, event.title)
@@ -197,7 +290,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return "Not recorded";
     }
-    // ---------- attendance ----------
 
     private void showAttendanceDialog(RoutineEvent event, LocalDate date) {
         String label = date.format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy", Locale.US));
@@ -238,6 +330,38 @@ public class MainActivity extends AppCompatActivity {
                 db.attendanceDao().remove(event.title, date.toString(), event.startTime));
     }
 
+    // ---------- chat box ----------
+
+    private void sendChat() {
+        String msg = binding.etChat.getText().toString().trim();
+        if (msg.isEmpty()) return;
+        binding.btnSend.setEnabled(false);
+        AiClient.ask(buildChatPrompt(msg), null, new AiClient.Callback() {
+            @Override public void onSuccess(String text) {
+                binding.btnSend.setEnabled(true);
+                if (reviewFromJson(text, "CHAT")) binding.etChat.setText("");
+            }
+            @Override public void onError(String message) {
+                binding.btnSend.setEnabled(true);
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void showInfo(RoutineEvent e) {
+        StringBuilder sb = new StringBuilder(EventAdapter.typeLabel(e.type));
+        if (e.date != null) sb.append("\nDate: ").append(e.date);
+        if (!nz(e.startTime).isEmpty()) sb.append("\nTime: ").append(e.startTime);
+        if (!nz(e.endTime).isEmpty()) sb.append(" - ").append(e.endTime);
+        if (!nz(e.room).isEmpty()) sb.append("\nRoom: ").append(e.room);
+        if (!nz(e.details).isEmpty()) sb.append("\n").append(e.details);
+        new AlertDialog.Builder(this)
+                .setTitle(e.title)
+                .setMessage(sb.toString())
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
     // ---------- SMS ----------
 
     private void requestSmsPermissions() {
@@ -257,7 +381,7 @@ public class MainActivity extends AppCompatActivity {
         DialogAddEventBinding d = DialogAddEventBinding.inflate(getLayoutInflater());
         d.spDay.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, DAYS));
-        d.spDay.setSelection(selectedDay - 1);
+        d.spDay.setSelection((selectedDay <= 7 ? selectedDay : todayNumber()) - 1);
 
         new AlertDialog.Builder(this)
                 .setTitle("Add to routine")
@@ -327,7 +451,7 @@ public class MainActivity extends AppCompatActivity {
         AiClient.ask(routinePrompt, bmp, new AiClient.Callback() {
             @Override public void onSuccess(String text) {
                 loading.dismiss();
-                showReview(text);
+                reviewFromJson(text, "IMAGE");
             }
             @Override public void onError(String message) {
                 loading.dismiss();
@@ -336,31 +460,54 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void showReview(String json) {
-        List<RoutineEvent> parsed = RoutineParser.tryParse(json, "IMAGE");
+    /** Parses the AI reply and shows the review dialog. Returns true if there was something to review. */
+    private boolean reviewFromJson(String json, String source) {
+        List<RoutineEvent> parsed = RoutineParser.tryParse(json, source);
         if (parsed == null) {
             Toast.makeText(this, "Couldn't understand the AI reply", Toast.LENGTH_LONG).show();
-            return;
+            return false;
         }
         if (parsed.isEmpty()) {
-            Toast.makeText(this, "No classes found in that photo", Toast.LENGTH_LONG).show();
-            return;
+            Toast.makeText(this, source.equals("CHAT")
+                    ? "Nothing to add from that message"
+                    : "No classes found in that photo", Toast.LENGTH_LONG).show();
+            return false;
         }
+        showReview(parsed);
+        return true;
+    }
+
+    private void showReview(List<RoutineEvent> parsed) {
         String[] labels = new String[parsed.size()];
         boolean[] checked = new boolean[parsed.size()];
+        boolean anyDated = false;
         for (int i = 0; i < parsed.size(); i++) {
             RoutineEvent e = parsed.get(i);
-            String day = (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) ? DAYS[e.dayOfWeek - 1] : "?";
-            labels[i] = day + " " + e.startTime + "-" + e.endTime + "  " + e.title;
+            if (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) {
+                labels[i] = DAYS[e.dayOfWeek - 1] + " " + e.startTime + "-" + e.endTime + "  " + e.title;
+            } else {
+                anyDated = true;
+                labels[i] = EventAdapter.typeLabel(e.type) + " · " + e.date
+                        + (nz(e.startTime).isEmpty() ? "" : " " + e.startTime)
+                        + "\n" + e.title
+                        + (nz(e.details).isEmpty() ? "" : "\n" + e.details);
+            }
             checked[i] = true;
         }
+        final boolean showUpcoming = anyDated;
         new AlertDialog.Builder(this)
-                .setTitle("Add these classes?")
+                .setTitle("Add these?")
                 .setMultiChoiceItems(labels, checked, (d, which, isChecked) -> checked[which] = isChecked)
                 .setPositiveButton("Add selected", (d, w) ->
                         AppDatabase.dbExecutor.execute(() -> {
                             for (int i = 0; i < parsed.size(); i++) {
                                 if (checked[i]) db.routineDao().insert(parsed.get(i));
+                            }
+                            if (showUpcoming) {
+                                runOnUiThread(() -> {
+                                    TabLayout.Tab t = binding.tabDays.getTabAt(UPCOMING_TAB - 1);
+                                    if (t != null) t.select();
+                                });
                             }
                         }))
                 .setNegativeButton("Cancel", null)
@@ -396,27 +543,6 @@ public class MainActivity extends AppCompatActivity {
             UserProfile.save(this, roll, groups[d.spGroup.getSelectedItemPosition()],
                     d.etPhone.getText().toString().trim());
             dialog.dismiss();
-        });
-    }
-    private void applyAttendance(List<Attendance> list) {
-        attendanceList = list;
-        Map<String, int[]> stats = new HashMap<>();
-        for (Attendance a : list) {
-            android.util.Log.d("Fluxora", "row: " + a.courseTitle + " | " + a.date
-                    + " | " + a.startTime + " | present=" + a.present);
-            int[] v = stats.computeIfAbsent(a.courseTitle, k -> new int[2]);
-            if (a.present) v[0]++;
-            v[1]++;
-        }
-        adapter.setStats(stats);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        AppDatabase.dbExecutor.execute(() -> {
-            List<Attendance> list = db.attendanceDao().getAllNow();
-            runOnUiThread(() -> applyAttendance(list));
         });
     }
 }

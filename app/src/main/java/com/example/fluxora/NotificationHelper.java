@@ -69,4 +69,30 @@ public class NotificationHelper {
         return PendingIntent.getBroadcast(ctx, requestCode, i,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
+    public static void showReminder(Context ctx, RoutineEvent e) {
+        int notifId = (int) e.id;
+        PendingIntent open = PendingIntent.getActivity(ctx, notifId,
+                new Intent(ctx, MainActivity.class),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        String text;
+        if ("ASSIGNMENT".equals(e.type) || "DEADLINE".equals(e.type)) {
+            text = "Due " + e.date;
+        } else {
+            text = "On " + e.date + (e.startTime != null && !e.startTime.isEmpty() ? " at " + e.startTime : "");
+        }
+        if (e.details != null && !e.details.isEmpty()) text += "\n" + e.details;
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(EventAdapter.typeLabel(e.type) + ": " + e.title)
+                .setContentText(text.split("\n")[0])
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setAutoCancel(true)
+                .setContentIntent(open);
+
+        ctx.getSystemService(NotificationManager.class).notify(notifId, b.build());
+    }
 }
