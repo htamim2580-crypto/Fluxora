@@ -15,7 +15,7 @@ public class AttendanceActionReceiver extends BroadcastReceiver {
         boolean present = intent.getBooleanExtra("present", false);
         int notifId = intent.getIntExtra("notifId", 0);
         if (title == null || date == null) return;
-        android.util.Log.d("Fluxora", "Action received: " + title + " | " + date + " | present=" + present);
+
         PendingResult result = goAsync();
         AppDatabase.dbExecutor.execute(() -> {
             try {
@@ -25,7 +25,7 @@ public class AttendanceActionReceiver extends BroadcastReceiver {
                 a.startTime = startTime;
                 a.present = present;
                 AppDatabase.get(context).attendanceDao().upsert(a);
-                android.util.Log.d("Fluxora", "Attendance saved");
+
                 NotificationHelper.showConfirmation(context, notifId, title, present);
             } finally {
                 result.finish();

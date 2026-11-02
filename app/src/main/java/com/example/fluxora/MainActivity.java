@@ -138,15 +138,11 @@ public class MainActivity extends AppCompatActivity {
         // Data
         db.routineDao().getAll().observe(this, events -> {
             allEvents = events;
-
-            refreshList();
-        });
-
-        db.routineDao().getAll().observe(this, events -> {
-            allEvents = events;
             refreshList();
             ClassScheduler.scheduleAllAsync(this);
         });
+
+        db.attendanceDao().getAll().observe(this, list -> applyAttendance(list));
 
         // Buttons
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
