@@ -9,14 +9,50 @@ import android.content.Intent;
 import androidx.core.app.NotificationCompat;
 import com.example.fluxora.db.RoutineEvent;
 
+import java.util.List;
+
 public class NotificationHelper {
     public static final String CHANNEL_ID = "class_reminders";
+    public static void showWhatsAppAdded(Context ctx, List<RoutineEvent> added, String chat) {
+        StringBuilder sb = new StringBuilder();
+        for (RoutineEvent e : added) {
+            sb.append(EventAdapter.typeLabel(e.type)).append(" · ").append(e.title)
+                    .append(" · ").append(e.date);
+            if (e.startTime != null && !e.startTime.isEmpty()) sb.append(" ").append(e.startTime);
+            sb.append("\n");
+        }
+        String body = sb.toString().trim();
+
+        PendingIntent open = PendingIntent.getActivity(ctx, 9001,
+                new Intent(ctx, MainActivity.class),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, UPDATES_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Added from " + chat)
+                .setContentText(body.split("\n")[0])
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(body + "\n\nWrong? Long-press it in the Upcoming tab to remove it."))
+                .setAutoCancel(true)
+                .setContentIntent(open);
+
+        ctx.getSystemService(NotificationManager.class)
+                .notify((int) (System.currentTimeMillis() & 0x7fffffff), b.build());
+    }
+    public static final String UPDATES_CHANNEL_ID = "whatsapp_updates";
 
     public static void createChannel(Context ctx) {
+        NotificationManager nm = ctx.getSystemService(NotificationManager.class);
+
         NotificationChannel ch = new NotificationChannel(
                 CHANNEL_ID, "Class reminders", NotificationManager.IMPORTANCE_HIGH);
         ch.setDescription("Asks whether you are attending when a class starts");
-        ctx.getSystemService(NotificationManager.class).createNotificationChannel(ch);
+        nm.createNotificationChannel(ch);
+
+        NotificationChannel up = new NotificationChannel(
+                UPDATES_CHANNEL_ID, "WhatsApp class updates", NotificationManager.IMPORTANCE_DEFAULT);
+        up.setDescription("Tells you what was added to your routine from WhatsApp messages");
+        nm.createNotificationChannel(up);
     }
 
     public static void showClassNotification(Context ctx, RoutineEvent e, String date) {

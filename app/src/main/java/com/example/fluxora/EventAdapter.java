@@ -87,6 +87,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.VH> {
             h.b.tvStart.setText(shortDate(e.date));
             h.b.tvEnd.setText(e.startTime == null ? "" : e.startTime);
             String label = typeLabel(e.type);
+            if ("WHATSAPP".equals(e.source)) label += " · from WhatsApp";
             if ("EXTRA_CLASS".equals(e.type) && s != null && s[1] > 0) {
                 label += String.format(Locale.US, " · Attended %d/%d", s[0], s[1]);
             }

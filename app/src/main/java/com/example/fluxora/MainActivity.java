@@ -199,6 +199,7 @@ public class MainActivity extends AppCompatActivity {
         db.attendanceDao().getAll().observe(this, list -> applyAttendance(list));
 
         // Buttons
+        binding.btnWhatsApp.setOnClickListener(v -> showWhatsAppDialog());
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
         binding.btnSend.setOnClickListener(v -> sendChat());
         binding.btnPayments.setOnClickListener(v -> startActivity(new Intent(this, PaymentsActivity.class)));
@@ -336,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
         String msg = binding.etChat.getText().toString().trim();
         if (msg.isEmpty()) return;
         binding.btnSend.setEnabled(false);
-        AiClient.ask(buildChatPrompt(msg), null, new AiClient.Callback() {
+        AiClient.ask(PromptBuilder.update(this, msg, allEvents, false), null, new AiClient.Callback() {
             @Override public void onSuccess(String text) {
                 binding.btnSend.setEnabled(true);
                 if (reviewFromJson(text, "CHAT")) binding.etChat.setText("");
@@ -544,5 +545,57 @@ public class MainActivity extends AppCompatActivity {
                     d.etPhone.getText().toString().trim());
             dialog.dismiss();
         });
+    }
+    private boolean hasListenerAccess() {
+        return androidx.core.app.NotificationManagerCompat
+                .getEnabledListenerPackages(this).contains(getPackageName());
+    }
+
+    private void showWhatsAppDialog() {
+        if (!hasListenerAccess()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Allow notification access")
+                    .setMessage("Fluxora reads WhatsApp notifications to find class updates. "
+                            + "Only the groups you choose are used.\n\nTurn on Fluxora in the next screen.")
+                    .setPositiveButton("Open settings", (d, w) -> startActivity(new Intent(
+                            android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)))
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            return;
+        }
+
+        java.util.Set<String> selected = WhatsAppPrefs.selected(this);
+        List<String> chats = WhatsAppPrefs.seenChats(this);
+        for (String s : selected) {
+            if (!chats.contains(s)) chats.add(s);
+        }
+        if (chats.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("WhatsApp class groups")
+                    .setMessage("No chats seen yet. When someone posts in your class group "
+                            + "(notifications must be on for it), it shows up here. Then come back and tick it.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+
+        String[] names = chats.toArray(new String[0]);
+        boolean[] checked = new boolean[names.length];
+        for (int i = 0; i < names.length; i++) checked[i] = selected.contains(names[i]);
+
+        boolean on = WhatsAppPrefs.enabled(this);
+        new AlertDialog.Builder(this)
+                .setTitle(on ? "Which chats are your class groups?" : "Paused. Pick your class groups")
+                .setMultiChoiceItems(names, checked, (d, which, isChecked) -> checked[which] = isChecked)
+                .setPositiveButton("Save", (d, w) -> {
+                    java.util.Set<String> out = new java.util.HashSet<>();
+                    for (int i = 0; i < names.length; i++) {
+                        if (checked[i]) out.add(names[i]);
+                    }
+                    WhatsAppPrefs.setSelected(this, out);
+                })
+                .setNeutralButton(on ? "Pause" : "Resume", (d, w) -> WhatsAppPrefs.setEnabled(this, !on))
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }

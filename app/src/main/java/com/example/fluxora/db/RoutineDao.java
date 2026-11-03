@@ -6,6 +6,8 @@ import java.util.List;
 
 @Dao
 public interface RoutineDao {
+    @Query("SELECT COUNT(*) FROM routine_events WHERE type = :type AND title = :title AND date = :date AND IFNULL(startTime, '') = :startTime")
+    int countSame(String type, String title, String date, String startTime);
     @Query("SELECT COUNT(*) FROM routine_events WHERE type = 'CANCELLED' AND title = :title AND date = :date")
     int countCancelled(String title, String date);
     @Query("SELECT * FROM routine_events")
