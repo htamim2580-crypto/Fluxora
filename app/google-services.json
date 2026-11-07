@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1052881059228",
+    "firebase_url": "https://fluxora-b7daf-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "fluxora-b7daf",
+    "storage_bucket": "fluxora-b7daf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052881059228:android:0a49c3a7172289dbe1dc59",
+        "android_client_info": {
+          "package_name": "com.example.fluxora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1052881059228-2ms9rmm2qhe1v9tr4n98l0hbksc4ajsg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fluxora",
+            "certificate_hash": "a092ee2704b8752938610d15ef32f00d1b4a7407"
+          }
+        },
+        {
+          "client_id": "1052881059228-npc1801cblv6u6joo6usntgl213tv7lf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmfON2tZ5HKFKrVM1Mz--5J99p26SDRl8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1052881059228-npc1801cblv6u6joo6usntgl213tv7lf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

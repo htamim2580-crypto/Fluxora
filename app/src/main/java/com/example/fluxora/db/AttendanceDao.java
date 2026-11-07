@@ -9,6 +9,8 @@ import java.util.List;
 
 @Dao
 public interface AttendanceDao {
+    @Query("DELETE FROM attendance")
+    void deleteAll();
     @Query("SELECT * FROM attendance")
     List<Attendance> getAllNow();
     @Insert(onConflict = OnConflictStrategy.REPLACE)

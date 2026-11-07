@@ -202,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
         binding.btnWhatsApp.setOnClickListener(v -> showWhatsAppDialog());
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
         binding.btnSend.setOnClickListener(v -> sendChat());
+        binding.btnAccount.setOnClickListener(v -> startActivity(new Intent(this, AccountActivity.class)));
         binding.btnPayments.setOnClickListener(v -> startActivity(new Intent(this, PaymentsActivity.class)));
         binding.btnAttendance.setOnClickListener(v -> startActivity(new Intent(this, AttendanceActivity.class)));
         binding.btnImport.setOnClickListener(v -> {
