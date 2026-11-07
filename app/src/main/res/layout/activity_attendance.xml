@@ -1,116 +1,209 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?android:attr/colorBackground"
-    android:fitsSystemWindows="true"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:fitsSystemWindows="true">
 
-    <!-- Editorial Title -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:fontFamily="serif"
-        android:text="Attendance Calendar"
-        android:textColor="?attr/colorOnBackground"
-        android:textSize="26sp"
-        android:textStyle="bold" />
-
-    <!-- Month Selector Bar -->
+    <!-- Main Calendar Content -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:padding="20dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <Button
-            android:id="@+id/btnPrev"
-            style="@style/Widget.Fluxora.Button.Secondary"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:padding="0dp"
-            android:text="‹"
-            android:textSize="22sp" />
-
+        <!-- Editorial Title -->
         <TextView
-            android:id="@+id/tvMonth"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginBottom="16dp"
             android:fontFamily="serif"
-            android:gravity="center"
-            android:letterSpacing="0.02"
+            android:text="Attendance Calendar"
             android:textColor="?attr/colorOnBackground"
-            android:textSize="20sp"
+            android:textSize="26sp"
             android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnNext"
-            style="@style/Widget.Fluxora.Button.Secondary"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:padding="0dp"
-            android:text="›"
-            android:textSize="22sp" />
-    </LinearLayout>
-
-    <!-- Soft Oat Calendar Card -->
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardBackgroundColor="?attr/colorSurface"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="0dp"
-        app:contentPadding="12dp"
-        app:strokeWidth="0dp">
-
+        <!-- Month Selector Bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <!-- Weekday Headers -->
+            <Button
+                android:id="@+id/btnPrev"
+                style="@style/Widget.Fluxora.Button.Secondary"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="‹"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/tvMonth"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="serif"
+                android:gravity="center"
+                android:letterSpacing="0.02"
+                android:textColor="?attr/colorOnBackground"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnNext"
+                style="@style/Widget.Fluxora.Button.Secondary"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="›"
+                android:textSize="22sp" />
+        </LinearLayout>
+
+        <!-- Soft Oat Calendar Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:contentPadding="12dp"
+            app:strokeWidth="0dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingTop="4dp"
-                android:paddingBottom="10dp">
+                android:orientation="vertical">
 
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="M" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="W" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="F" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                <!-- Weekday Headers -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="10dp">
+
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="M" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="W" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="F" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvCalendar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never" />
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvCalendar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:overScrollMode="never" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+        <!-- Subtle Legend -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:padding="12dp"
+            android:text="Green: present  ·  Red: absent  ·  Gold: mixed\nTap any day to view or edit records."
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp" />
+    </LinearLayout>
 
-    <!-- Subtle Legend -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:lineSpacingExtra="4dp"
-        android:padding="12dp"
-        android:text="Green: present  ·  Red: absent  ·  Gold: mixed\nTap any day to view or edit records."
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="13sp" />
-</LinearLayout>
+    <!-- FLOATING BOTTOM PILL DOCK (Calendar Active) -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_floating_dock"
+        android:elevation="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Schedule Tab Button -->
+        <Button
+            android:id="@+id/btnSchedule"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:singleLine="true"
+            android:text="Schedule"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_nav_schedule"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:iconSize="16dp"
+            app:iconTint="?attr/colorOnSurfaceVariant" />
+
+        <!-- Active Calendar Pill Indicator -->
+        <TextView
+            android:id="@+id/btnAttendance"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1.15"
+            android:background="@drawable/bg_tab_pill_selector"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:text="Calendar"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <!-- Ledger / Payments Tab Button -->
+        <Button
+            android:id="@+id/btnPayments"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:maxLines="1"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:singleLine="true"
+            android:text="Ledger"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_nav_wallet"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:iconSize="16dp"
+            app:iconTint="?attr/colorOnSurfaceVariant" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

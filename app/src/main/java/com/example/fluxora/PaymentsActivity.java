@@ -32,5 +32,10 @@ public class PaymentsActivity extends AppCompatActivity {
         db.paymentDao().totalSpentSince(cal.getTimeInMillis()).observe(this, total ->
                 binding.tvTotal.setText("Spent this month: Tk "
                         + String.format(Locale.US, "%.2f", total == null ? 0.0 : total)));
+        findViewById(R.id.btnSchedule).setOnClickListener(v -> finish());
+        findViewById(R.id.btnAttendance).setOnClickListener(v -> {
+            startActivity(new android.content.Intent(this, AttendanceActivity.class));
+            finish();
+        });
     }
 }

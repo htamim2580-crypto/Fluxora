@@ -51,6 +51,11 @@ public class AttendanceActivity extends AppCompatActivity {
             refresh();
         });
         refresh();
+        findViewById(R.id.btnSchedule).setOnClickListener(v -> finish());
+        findViewById(R.id.btnPayments).setOnClickListener(v -> {
+            startActivity(new android.content.Intent(this, PaymentsActivity.class));
+            finish();
+        });
     }
 
     private void refresh() {

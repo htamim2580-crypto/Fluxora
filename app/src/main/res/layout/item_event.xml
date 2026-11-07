@@ -1,94 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="4dp"
     android:layout_marginTop="6dp"
-    android:layout_marginEnd="4dp"
     android:layout_marginBottom="6dp"
-    app:cardBackgroundColor="?attr/colorSurface"
-    app:cardCornerRadius="20dp"
-    app:cardElevation="0dp"
-    app:strokeWidth="0dp">
+    android:gravity="top"
+    android:orientation="horizontal">
 
+    <!-- LEFT TIMELINE GUTTER (Outside the Card, just like the Reference Images) -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="64dp"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="18dp"
-        android:paddingTop="18dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="18dp">
+        android:orientation="vertical"
+        android:paddingTop="14dp"
+        android:paddingEnd="8dp">
 
-        <!-- Time Column -->
-        <LinearLayout
-            android:layout_width="68dp"
+        <TextView
+            android:id="@+id/tvStart"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:gravity="end"
+            android:textColor="?attr/colorOnBackground"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvStart"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:letterSpacing="0.02"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvEnd"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <!-- Brushed Gold / Botanical Vertical Accent -->
-        <View
-            android:layout_width="2dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="14dp"
-            android:layout_marginEnd="16dp"
-            android:background="?attr/colorTertiary" />
-
-        <!-- Course & Room Details -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvEnd"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:letterSpacing="0.01"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvRoom"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/tvAttendance"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:letterSpacing="0.02"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+            android:layout_marginTop="2dp"
+            android:gravity="end"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="11sp" />
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+    <!-- RIGHT FLOATING EVENT CARD -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        app:cardBackgroundColor="?attr/colorSurface"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:strokeColor="?attr/colorOutlineVariant"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp">
+
+            <!-- Vertical Timeline Bar Inside Card (Matches Image 2) -->
+            <View
+                android:layout_width="3dp"
+                android:layout_height="match_parent"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginBottom="2dp"
+                android:background="?attr/colorPrimary" />
+
+            <!-- Event Info Stack -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="-0.01"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvRoom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp" />
+
+                <!-- Soft Pill Badge for Attendance / Status -->
+                <TextView
+                    android:id="@+id/tvAttendance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_soft_input"
+                    android:paddingStart="10dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="3dp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Subtle Right Chevron › (Matches Reference Cards) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="›"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="22sp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>
