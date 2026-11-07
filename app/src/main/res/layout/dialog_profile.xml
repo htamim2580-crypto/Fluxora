@@ -3,30 +3,58 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingStart="24dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="12dp">
 
-    <EditText
-        android:id="@+id/etRoll"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Fluxora.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Roll number"
-        android:inputType="number" />
+        android:layout_marginBottom="14dp">
+
+        <EditText
+            android:id="@+id/etRoll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Roll number"
+            android:inputType="number"
+            android:padding="16dp"
+            android:textColor="?attr/colorOnSurface" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="12dp"
-        android:text="Section and lab group" />
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="6dp"
+        android:text="Section and lab group"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
     <Spinner
         android:id="@+id/spGroup"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="52dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/bg_soft_input"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp" />
 
-    <EditText
-        android:id="@+id/etPhone"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Fluxora.TextInputLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Your bKash number (optional)"
-        android:inputType="phone" />
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/etPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Your bKash number (optional)"
+            android:inputType="phone"
+            android:padding="16dp"
+            android:textColor="?attr/colorOnSurface" />
+    </com.google.android.material.textfield.TextInputLayout>
 </LinearLayout>

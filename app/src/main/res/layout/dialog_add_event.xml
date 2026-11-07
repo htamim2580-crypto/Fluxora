@@ -3,38 +3,99 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingStart="24dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="12dp">
 
-    <EditText
-        android:id="@+id/etTitle"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Fluxora.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Subject / title"
-        android:inputType="text" />
+        android:layout_marginBottom="12dp">
+
+        <EditText
+            android:id="@+id/etTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Subject / title"
+            android:inputType="textCapWords"
+            android:padding="16dp"
+            android:textColor="?attr/colorOnSurface" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="6dp"
+        android:text="Day of week"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
     <Spinner
         android:id="@+id/spDay"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="52dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_soft_input"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp" />
 
-    <EditText
-        android:id="@+id/etStart"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Start time (HH:mm, e.g. 09:00)"
-        android:inputType="text" />
+        android:layout_marginBottom="12dp"
+        android:orientation="horizontal">
 
-    <EditText
-        android:id="@+id/etEnd"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="End time (HH:mm, e.g. 10:30)"
-        android:inputType="text" />
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Fluxora.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1">
 
-    <EditText
-        android:id="@+id/etRoom"
+            <EditText
+                android:id="@+id/etStart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Start (09:00)"
+                android:inputType="time"
+                android:padding="16dp"
+                android:textColor="?attr/colorOnSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Fluxora.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1">
+
+            <EditText
+                android:id="@+id/etEnd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="End (10:30)"
+                android:inputType="time"
+                android:padding="16dp"
+                android:textColor="?attr/colorOnSurface" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Fluxora.TextInputLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Room (optional)"
-        android:inputType="text" />
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/etRoom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Room (optional)"
+            android:inputType="textCapCharacters"
+            android:padding="16dp"
+            android:textColor="?attr/colorOnSurface" />
+    </com.google.android.material.textfield.TextInputLayout>
 </LinearLayout>

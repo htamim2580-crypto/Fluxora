@@ -23,9 +23,6 @@ public class AiClient {
     // If you get "model not found", use a model name that AI Studio currently lists.
     private static final String[] MODELS = {"gemini-3.6-flash", "gemini-3.5-flash"};
 
-    private static String endpoint(String model) {
-        return "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent";
-    }
     private static final ExecutorService EXEC = Executors.newSingleThreadExecutor();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
@@ -34,19 +31,74 @@ public class AiClient {
         void onError(String message);
     }
 
+    private static String endpoint(String model) {
+        return "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent";
+    }
+
+    /** Normal entry point: respects the AI switch and uses the user's own key if set. */
     public static void ask(String prompt, Bitmap image, Callback cb) {
+        if (!AiPrefs.enabled()) {
+            MAIN.post(() -> cb.onError("AI is turned off. Turn it on in Settings."));
+            return;
+        }
+        String key = AiPrefs.effectiveKey();
+        if (key == null || key.isEmpty()) {
+            MAIN.post(() -> cb.onError("No Gemini key. Add one in Settings."));
+            return;
+        }
+        askWithKey(key, prompt, image, cb);
+    }
+
+    /** Used directly by the Settings screen to test a key before saving it. */
+    public static void askWithKey(String key, String prompt, Bitmap image, Callback cb) {
         EXEC.execute(() -> {
             try {
-                String text = requestWithRetry(prompt, image);
+                String text = requestWithRetry(prompt, image, key);
                 MAIN.post(() -> cb.onSuccess(text));
             } catch (Exception e) {
-                String msg = e.getMessage() == null ? "Network error" : e.getMessage();
+                String msg = friendly(e.getMessage());
                 MAIN.post(() -> cb.onError(msg));
             }
         });
     }
 
-    private static String request(String prompt, Bitmap image, String model) throws Exception {
+    private static String friendly(String m) {
+        if (m == null) return "Network error. Check your connection.";
+        if (m.startsWith("API error 503") || m.startsWith("API error 429")) {
+            return "AI is busy right now. Try again in a minute.";
+        }
+        if (m.contains("API_KEY_INVALID") || m.contains("API key not valid")) {
+            return "That Gemini key isn't valid. Check it in Settings.";
+        }
+        if (m.startsWith("API error 403")) {
+            return "Gemini refused the key (403). Check it in Settings.";
+        }
+        if (m.startsWith("API error 404")) {
+            return "The AI model isn't available. The app may need an update.";
+        }
+        return m;
+    }
+
+    private static String requestWithRetry(String prompt, Bitmap image, String key) throws Exception {
+        Exception last = null;
+        for (int attempt = 0; attempt < 3; attempt++) {
+            String model = MODELS[attempt % MODELS.length];
+            try {
+                return request(prompt, image, model, key);
+            } catch (IOException e) {
+                last = e;
+                String m = String.valueOf(e.getMessage());
+                boolean retryable = m.startsWith("API error 503")
+                        || m.startsWith("API error 429")
+                        || m.startsWith("API error 500");
+                if (!retryable) throw e;
+                Thread.sleep(2000L * (attempt + 1));
+            }
+        }
+        throw last;
+    }
+
+    private static String request(String prompt, Bitmap image, String model, String key) throws Exception {
         JSONArray parts = new JSONArray();
         parts.put(new JSONObject().put("text", prompt));
         if (image != null) {
@@ -68,7 +120,7 @@ public class AiClient {
         conn.setConnectTimeout(20000);
         conn.setReadTimeout(60000);
         conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("x-goog-api-key", BuildConfig.GEMINI_API_KEY);
+        conn.setRequestProperty("x-goog-api-key", key);
         conn.setDoOutput(true);
         try (OutputStream os = conn.getOutputStream()) {
             os.write(body.toString().getBytes(StandardCharsets.UTF_8));
@@ -92,23 +144,5 @@ public class AiClient {
         String line;
         while ((line = r.readLine()) != null) sb.append(line);
         return sb.toString();
-    }
-    private static String requestWithRetry(String prompt, Bitmap image) throws Exception {
-        Exception last = null;
-        for (int attempt = 0; attempt < 3; attempt++) {
-            String model = MODELS[attempt % MODELS.length];
-            try {
-                return request(prompt, image, model);
-            } catch (IOException e) {
-                last = e;
-                String m = String.valueOf(e.getMessage());
-                boolean retryable = m.startsWith("API error 503")
-                        || m.startsWith("API error 429")
-                        || m.startsWith("API error 500");
-                if (!retryable) throw e;
-                Thread.sleep(2000L * (attempt + 1));
-            }
-        }
-        throw last;
     }
 }

@@ -79,4 +79,9 @@ public class WhatsAppListener extends NotificationListenerService {
             WhatsAppProcessor.process(getApplicationContext(), chat, text);
         }
     }
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        AiPrefs.init(this);
+    }
 }

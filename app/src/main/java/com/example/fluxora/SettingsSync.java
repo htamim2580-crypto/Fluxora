@@ -36,6 +36,7 @@ public class SettingsSync {
         data.put("whatsappEnabled", WhatsAppPrefs.enabled(ctx));
         data.put("whatsappChats", new ArrayList<>(WhatsAppPrefs.selected(ctx)));
         data.put("updatedAt", ServerValue.TIMESTAMP);
+        data.put("aiEnabled", AiPrefs.enabled());
 
         ref(user).child("settings").setValue(data)
                 .addOnSuccessListener(v -> cb.onDone())

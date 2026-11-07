@@ -1,5 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Quiet Luxury Botanical Palette - Core & Brand -->
+    <color name="primary">#6B8E7E</color>              <!-- Muted Sage -->
+    <color name="primary_dark">#527062</color>         <!-- Deep Sage -->
+    <color name="primary_light">#8FAEA0</color>        <!-- Soft Sage -->
+    <color name="primary_container">#DCE7E1</color>    <!-- Pale Sage Mist -->
+    <color name="on_primary_container">#23352D</color>
+    <color name="on_primary">#FFFFFF</color>
+
+    <color name="primary_container_dark">#2E4239</color>
+    <color name="on_primary_container_dark">#D4E4DC</color>
+
+    <!-- Secondary (Warm Sand) -->
+    <color name="secondary">#F0D9C5</color>            <!-- Warm Sand -->
+    <color name="secondary_container">#F0D9C5</color>
+    <color name="on_secondary_container">#36454F</color>
+    <color name="on_secondary">#36454F</color>
+
+    <color name="secondary_dark">#D5B89F</color>
+    <color name="secondary_container_dark">#3D3730</color>
+    <color name="on_secondary_container_dark">#F0D9C5</color>
+
+    <!-- Accent / Tertiary (Brushed Gold) -->
+    <color name="tertiary">#D4AF37</color>             <!-- Brushed Gold -->
+    <color name="tertiary_container">#F7EFE0</color>   <!-- Champagne Tint -->
+    <color name="on_tertiary_container">#4A3B0C</color>
+    <color name="on_tertiary">#1E2824</color>
+
+    <color name="tertiary_container_dark">#3F371D</color>
+    <color name="on_tertiary_container_dark">#F3E2A9</color>
+
+    <!-- Surfaces & Backgrounds - Light (Warm Alabaster & Soft Oat) -->
+    <color name="background_light">#F8F5ED</color>         <!-- Warm Alabaster -->
+    <color name="surface_light">#EDE8DF</color>            <!-- Soft Oat (Cards/Sheets) -->
+    <color name="surface_container_light">#E5DFD3</color>  <!-- Deeper Oat -->
+    <color name="surface_variant_light">#E2DDD2</color>    <!-- Subtle Divider/Chip Fill -->
+    <color name="outline_light">#C9C3B6</color>            <!-- Soft Hairline Border -->
+    <color name="outline_variant_light">#DFDAD0</color>
+
+    <!-- Text & Content - Light (Deep Charcoal) -->
+    <color name="text_primary_light">#36454F</color>       <!-- Deep Charcoal -->
+    <color name="text_secondary_light">#626F77</color>     <!-- Muted Slate -->
+    <color name="text_tertiary_light">#8C969C</color>      <!-- Soft Pewter -->
+
+    <!-- Surfaces & Backgrounds - Dark (Deep Forest Slate & Muted Moss) -->
+    <color name="background_dark">#1E2824</color>          <!-- Deep Forest Slate -->
+    <color name="surface_dark">#2A3630</color>             <!-- Muted Moss Charcoal -->
+    <color name="surface_container_dark">#324039</color>   <!-- Elevated Moss -->
+    <color name="surface_variant_dark">#38463F</color>
+    <color name="outline_dark">#46564E</color>
+    <color name="outline_variant_dark">#33413A</color>
+
+    <!-- Text & Content - Dark (Soft Off-White) -->
+    <color name="text_primary_dark">#E0E0E0</color>        <!-- Soft Off-White -->
+    <color name="text_secondary_dark">#A8B5AE</color>      <!-- Muted Sage Grey -->
+    <color name="text_tertiary_dark">#76857D</color>       <!-- Deep Moss Grey -->
+
+    <!-- Harmonized Semantic Status Colors (Botanical/Earthy Tones) -->
+    <color name="success">#4E7D63</color>
+    <color name="success_container">#DCECE3</color>
+    <color name="on_success_container">#1E3A2B</color>
+
+    <color name="danger">#B85450</color>
+    <color name="danger_container">#F5DFDE</color>
+    <color name="on_danger_container">#4A1B19</color>
+
+    <color name="warning">#C88A32</color>
+    <color name="warning_container">#F7E9D2</color>
+    <color name="on_warning_container">#4A300B</color>
+
+    <color name="info">#5B7C99</color>
+    <color name="info_container">#DFEAEF</color>
+    <color name="on_info_container">#1D3142</color>
+
+    <!-- Legacy Brand Accents (Retained for compatibility) -->
+    <color name="whatsapp_green">#25D366</color>
+    <color name="whatsapp_container">#DCF8C6</color>
+    <color name="bkash_pink">#E2136E</color>
+
+    <!-- Base -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
 </resources>

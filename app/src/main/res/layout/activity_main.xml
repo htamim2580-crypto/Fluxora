@@ -4,90 +4,144 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:fitsSystemWindows="true">
 
+    <!-- Editorial Header -->
     <TextView
         android:id="@+id/tvHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="16dp"
+        android:fontFamily="serif"
+        android:letterSpacing="0.01"
+        android:paddingStart="24dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="12dp"
         android:text="My Routine"
-        android:textSize="24sp"
+        android:textColor="?attr/colorOnBackground"
+        android:textSize="28sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Minimalist Botanical Day Tabs -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabDays"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:tabMode="scrollable"
-        app:layout_constraintTop_toBottomOf="@id/tvHeader"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/tvHeader"
+        app:tabGravity="start"
+        app:tabIndicatorAnimationMode="elastic"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabIndicatorFullWidth="false"
+        app:tabIndicatorHeight="3dp"
+        app:tabMode="scrollable"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="?attr/colorOnSurfaceVariant" />
 
+    <!-- Breathable Event List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvEvents"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:padding="8dp"
-        app:layout_constraintTop_toBottomOf="@id/tabDays"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="88dp"
         app:layout_constraintBottom_toTopOf="@id/chatBar"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/tabDays" />
 
+    <!-- Serene Empty State -->
     <TextView
         android:id="@+id/tvEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="serif"
+        android:letterSpacing="0.02"
         android:text="No classes on this day"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="16sp"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="@id/rvEvents"
         app:layout_constraintBottom_toBottomOf="@id/rvEvents"
+        app:layout_constraintEnd_toEndOf="@id/rvEvents"
         app:layout_constraintStart_toStartOf="@id/rvEvents"
-        app:layout_constraintEnd_toEndOf="@id/rvEvents" />
+        app:layout_constraintTop_toTopOf="@id/rvEvents" />
 
+    <!-- AI Assistant Prompt Bar -->
     <LinearLayout
         android:id="@+id/chatBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_soft_input"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="8dp"
+        android:paddingStart="16dp"
+        android:paddingTop="6dp"
         android:paddingEnd="8dp"
+        android:paddingBottom="6dp"
         app:layout_constraintBottom_toTopOf="@id/bottomBar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <EditText
             android:id="@+id/etChat"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Type an update, e.g. MATH 2207 class cancelled tomorrow"
+            android:background="@null"
+            android:hint="Update routine (e.g. MATH 2207 cancelled)..."
             android:inputType="textCapSentences|textMultiLine"
-            android:maxLines="3" />
+            android:maxLines="3"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/btnSend"
+            style="@style/Widget.Fluxora.Button.Primary"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:layout_marginStart="8dp"
-            android:text="Send" />
+            android:minHeight="40dp"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:text="Send"
+            android:textSize="13sp" />
     </LinearLayout>
 
+    <!-- Soft Oat Dock for Navigation & Tools -->
     <LinearLayout
         android:id="@+id/bottomBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
         android:orientation="vertical"
-        android:padding="8dp"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
+        <!-- Primary Navigation Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -95,55 +149,119 @@
 
             <Button
                 android:id="@+id/btnPayments"
+                style="@style/Widget.Fluxora.Button.Secondary"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:layout_weight="1"
-                android:text="Payments" />
+                android:minHeight="44dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="Payments"
+                android:textSize="13sp" />
 
             <Button
                 android:id="@+id/btnAttendance"
+                style="@style/Widget.Fluxora.Button.Secondary"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Calendar" />
+                android:minHeight="44dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="Calendar"
+                android:textSize="13sp" />
+
             <Button
                 android:id="@+id/btnAccount"
+                style="@style/Widget.Fluxora.Button.Secondary"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Account" />
+                android:minHeight="44dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="Account"
+                android:textSize="13sp" />
         </LinearLayout>
 
+        <!-- Secondary Utility Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btnImport"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="42dp"
                 android:layout_weight="1"
-                android:text="Import photo" />
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="42dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:text="Import photo"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="12sp"
+                app:cornerRadius="999dp"
+                app:strokeColor="?attr/colorOutline" />
 
             <Button
                 android:id="@+id/btnWhatsApp"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="42dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="WhatsApp" />
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="42dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:text="WhatsApp"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="12sp"
+                app:cornerRadius="999dp"
+                app:strokeColor="?attr/colorOutline" />
+
+            <Button
+                android:id="@+id/btnSettings"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="42dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:text="Settings"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="12sp"
+                app:cornerRadius="999dp"
+                app:strokeColor="?attr/colorOutline" />
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Muted Sage Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAdd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Add Event"
         android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="?attr/colorPrimary"
+        app:elevation="2dp"
         app:layout_constraintBottom_toTopOf="@id/chatBar"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+        app:tint="?attr/colorOnPrimary" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

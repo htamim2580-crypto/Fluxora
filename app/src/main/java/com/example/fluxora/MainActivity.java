@@ -142,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AiPrefs.init(this);
         EdgeToEdge.enable(this);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -203,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
         binding.btnSend.setOnClickListener(v -> sendChat());
         binding.btnAccount.setOnClickListener(v -> startActivity(new Intent(this, AccountActivity.class)));
+        binding.btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
         binding.btnPayments.setOnClickListener(v -> startActivity(new Intent(this, PaymentsActivity.class)));
         binding.btnAttendance.setOnClickListener(v -> startActivity(new Intent(this, AttendanceActivity.class)));
         binding.btnImport.setOnClickListener(v -> {
@@ -228,6 +230,10 @@ public class MainActivity extends AppCompatActivity {
             List<Attendance> list = db.attendanceDao().getAllNow();
             runOnUiThread(() -> applyAttendance(list));
         });
+        int ai = AiPrefs.enabled() ? View.VISIBLE : View.GONE;
+        binding.chatBar.setVisibility(ai);
+        binding.btnImport.setVisibility(ai);
+
     }
 
     // ---------- day helpers ----------
