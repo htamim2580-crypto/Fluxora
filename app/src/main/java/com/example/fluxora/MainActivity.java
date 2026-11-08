@@ -4,16 +4,22 @@ import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
@@ -22,6 +28,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.fluxora.databinding.ActivityMainBinding;
@@ -30,15 +37,18 @@ import com.example.fluxora.databinding.DialogProfileBinding;
 import com.example.fluxora.db.AppDatabase;
 import com.example.fluxora.db.Attendance;
 import com.example.fluxora.db.RoutineEvent;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,10 +60,16 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private AppDatabase db;
     private EventAdapter adapter;
+    private CalendarAdapter calendarAdapter;
+    private PaymentAdapter paymentAdapter;
+
     private String routinePrompt;
     private List<RoutineEvent> allEvents = new ArrayList<>();
     private List<Attendance> attendanceList = new ArrayList<>();
+    private YearMonth month = YearMonth.now();
+
     private int selectedDay;   // 1 = Sunday ... 7 = Saturday, 8 = Upcoming
+    private int currentTab = 0; // 0 = Schedule, 1 = Calendar, 2 = Ledger
 
     private static final int UPCOMING_TAB = 8;
 
@@ -156,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
 
         db = AppDatabase.get(this);
 
-        // Adapter
+        // --- PAGE 0: SCHEDULE SETUP ---
         adapter = new EventAdapter(new EventAdapter.Listener() {
             @Override public void onClick(RoutineEvent e) {
                 if (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) {
@@ -174,7 +190,6 @@ public class MainActivity extends AppCompatActivity {
         binding.rvEvents.setLayoutManager(new LinearLayoutManager(this));
         binding.rvEvents.setAdapter(adapter);
 
-        // Day tabs (Sun..Sat + Upcoming), today selected first
         for (String d : SHORT_DAYS) {
             binding.tabDays.addTab(binding.tabDays.newTab().setText(d));
         }
@@ -191,7 +206,38 @@ public class MainActivity extends AppCompatActivity {
             @Override public void onTabReselected(TabLayout.Tab tab) { }
         });
 
-        // Data
+        // --- PAGE 1: CALENDAR SETUP ---
+        calendarAdapter = new CalendarAdapter(this::showCalendarDay);
+        binding.rvCalendar.setLayoutManager(new GridLayoutManager(this, 7));
+        binding.rvCalendar.setAdapter(calendarAdapter);
+
+        binding.btnPrev.setOnClickListener(v -> {
+            month = month.minusMonths(1);
+            refreshCalendar();
+        });
+        binding.btnNext.setOnClickListener(v -> {
+            month = month.plusMonths(1);
+            refreshCalendar();
+        });
+
+        // --- PAGE 2: LEDGER / PAYMENTS SETUP ---
+        paymentAdapter = new PaymentAdapter();
+        binding.rvPayments.setLayoutManager(new LinearLayoutManager(this));
+        binding.rvPayments.setAdapter(paymentAdapter);
+        db.paymentDao().getAll().observe(this, paymentAdapter::setItems);
+
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        db.paymentDao().totalSpentSince(cal.getTimeInMillis()).observe(this, total ->
+                binding.tvTotal.setText("Spent this month: Tk "
+                        + String.format(Locale.US, "%.2f", total == null ? 0.0 : total)));
+
+        // --- DATABASE OBSERVERS ---
         db.routineDao().getAll().observe(this, events -> {
             allEvents = events;
             refreshList();
@@ -199,20 +245,37 @@ public class MainActivity extends AppCompatActivity {
         });
         db.attendanceDao().getAll().observe(this, list -> applyAttendance(list));
 
-        // Buttons
+        // --- TOP BAR & ACTION BUTTONS ---
         binding.btnWhatsApp.setOnClickListener(v -> showWhatsAppDialog());
         binding.fabAdd.setOnClickListener(v -> showAddDialog());
         binding.btnSend.setOnClickListener(v -> sendChat());
         binding.btnAccount.setOnClickListener(v -> startActivity(new Intent(this, AccountActivity.class)));
         binding.btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
-        binding.btnPayments.setOnClickListener(v -> startActivity(new Intent(this, PaymentsActivity.class)));
-        binding.btnAttendance.setOnClickListener(v -> startActivity(new Intent(this, AttendanceActivity.class)));
         binding.btnImport.setOnClickListener(v -> {
             routinePrompt = buildRoutinePrompt(UserProfile.section(this), UserProfile.group(this));
             imagePicker.launch("image/*");
         });
-        binding.tvHeader.setOnClickListener(v -> showProfileDialog(true));   // tap the title to edit profile
+        binding.tvHeader.setOnClickListener(v -> showProfileDialog(true));
 
+        // --- FIXED BOTTOM DOCK NAVIGATION ---
+        binding.btnSchedule.setOnClickListener(v -> switchTab(0));
+        binding.btnAttendance.setOnClickListener(v -> switchTab(1));
+        binding.btnPayments.setOnClickListener(v -> switchTab(2));
+
+        // Pressing Back on Calendar or Ledger smoothly returns to Schedule instead of closing the app
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (currentTab != 0) {
+                    switchTab(0);
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
+
+        refreshCalendar();
         requestSmsPermissions();
         if (!UserProfile.isSet(this)) showProfileDialog(false);
         NotificationHelper.createChannel(this);
@@ -233,7 +296,55 @@ public class MainActivity extends AppCompatActivity {
         int ai = AiPrefs.enabled() ? View.VISIBLE : View.GONE;
         binding.chatBar.setVisibility(ai);
         binding.btnImport.setVisibility(ai);
+    }
 
+    // ---------- bottom dock tab switching & directional animation ----------
+
+    private void switchTab(int targetTab) {
+        if (targetTab == currentTab) return;
+
+        // Forward (0 -> 1 -> 2) slides Right-to-Left; Backward (2 -> 1 -> 0) slides Left-to-Right
+        if (targetTab > currentTab) {
+            binding.viewFlipper.setInAnimation(this, R.anim.slide_in_right);
+            binding.viewFlipper.setOutAnimation(this, R.anim.slide_out_left);
+        } else {
+            binding.viewFlipper.setInAnimation(this, R.anim.slide_in_left);
+            binding.viewFlipper.setOutAnimation(this, R.anim.slide_out_right);
+        }
+
+        binding.viewFlipper.setDisplayedChild(targetTab);
+        currentTab = targetTab;
+
+        if (targetTab == 0) binding.fabAdd.show();
+        else binding.fabAdd.hide();
+
+        styleDockButton(binding.btnSchedule, targetTab == 0);
+        styleDockButton(binding.btnAttendance, targetTab == 1);
+        styleDockButton(binding.btnPayments, targetTab == 2);
+    }
+
+    private void styleDockButton(Button button, boolean active) {
+        TypedValue tv = new TypedValue();
+        if (active) {
+            button.setBackgroundResource(R.drawable.bg_tab_pill_selector);
+            getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnPrimary, tv, true);
+            button.setTextColor(tv.data);
+            button.setTypeface(null, Typeface.BOLD);
+            if (button instanceof MaterialButton) {
+                ((MaterialButton) button).setBackgroundTintList(null);
+                ((MaterialButton) button).setIconTint(ColorStateList.valueOf(tv.data));
+            }
+        } else {
+            button.setBackgroundColor(Color.TRANSPARENT);
+            getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, tv, true);
+            button.setTextColor(tv.data);
+            button.setTypeface(null, Typeface.NORMAL);
+            if (button instanceof MaterialButton) {
+                ((MaterialButton) button).setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+                getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, tv, true);
+                ((MaterialButton) button).setIconTint(ColorStateList.valueOf(tv.data));
+            }
+        }
     }
 
     // ---------- day helpers ----------
@@ -275,7 +386,7 @@ public class MainActivity extends AppCompatActivity {
         binding.tvEmpty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
-    // ---------- attendance ----------
+    // ---------- attendance & calendar ----------
 
     private void applyAttendance(List<Attendance> list) {
         attendanceList = list;
@@ -286,6 +397,68 @@ public class MainActivity extends AppCompatActivity {
             v[1]++;
         }
         adapter.setStats(stats);
+        refreshCalendar();
+    }
+
+    private void refreshCalendar() {
+        if (calendarAdapter == null) return;
+        binding.tvMonth.setText(month.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US)));
+
+        List<LocalDate> days = new ArrayList<>();
+        int offset = month.atDay(1).getDayOfWeek().getValue() % 7;   // Sunday = 0 blanks
+        for (int i = 0; i < offset; i++) days.add(null);
+        for (int d = 1; d <= month.lengthOfMonth(); d++) days.add(month.atDay(d));
+
+        Map<String, int[]> summary = new HashMap<>();
+        for (Attendance a : attendanceList) {
+            int[] v = summary.computeIfAbsent(a.date, k -> new int[2]);
+            if (a.present) v[0]++; else v[1]++;
+        }
+        calendarAdapter.setData(days, summary);
+    }
+
+    private void showCalendarDay(LocalDate date) {
+        List<Attendance> records = new ArrayList<>();
+        for (Attendance a : attendanceList) {
+            if (date.toString().equals(a.date)) records.add(a);
+        }
+        String label = date.format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy", Locale.US));
+        if (records.isEmpty()) {
+            Toast.makeText(this, "Nothing recorded on " + label, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        records.sort((x, y) -> String.valueOf(x.startTime).compareTo(String.valueOf(y.startTime)));
+
+        String[] items = new String[records.size()];
+        for (int i = 0; i < records.size(); i++) {
+            Attendance a = records.get(i);
+            items[i] = (a.present ? "✓ " : "✗ ") + a.courseTitle + "  (" + a.startTime + ")";
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(label)
+                .setItems(items, (dialog, which) -> editCalendarRecord(records.get(which)))
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void editCalendarRecord(Attendance a) {
+        String[] options = {"Mark present", "Mark absent", "Delete this record"};
+        new AlertDialog.Builder(this)
+                .setTitle(a.courseTitle)
+                .setItems(options, (dialog, which) -> {
+                    if (which == 2) {
+                        AppDatabase.dbExecutor.execute(() ->
+                                db.attendanceDao().remove(a.courseTitle, a.date, a.startTime));
+                    } else {
+                        Attendance copy = new Attendance();
+                        copy.courseTitle = a.courseTitle;
+                        copy.date = a.date;
+                        copy.startTime = a.startTime;
+                        copy.present = (which == 0);
+                        AppDatabase.dbExecutor.execute(() -> db.attendanceDao().upsert(copy));
+                    }
+                })
+                .show();
     }
 
     private String statusFor(RoutineEvent event, LocalDate date) {
@@ -553,6 +726,7 @@ public class MainActivity extends AppCompatActivity {
             dialog.dismiss();
         });
     }
+
     private boolean hasListenerAccess() {
         return androidx.core.app.NotificationManagerCompat
                 .getEnabledListenerPackages(this).contains(getPackageName());

@@ -6,13 +6,27 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import com.example.fluxora.db.RoutineEvent;
 
 import java.util.List;
 
 public class NotificationHelper {
     public static final String CHANNEL_ID = "class_reminders";
+    public static final String UPDATES_CHANNEL_ID = "whatsapp_updates";
+
+    /** Applies the Fluxora logo (small vector + full-color large icon) and Muted Sage accent color. */
+    private static NotificationCompat.Builder baseBuilder(Context ctx, String channelId) {
+        Bitmap largeLogo = BitmapFactory.decodeResource(ctx.getResources(), R.mipmap.ic_launcher);
+        return new NotificationCompat.Builder(ctx, channelId)
+                .setSmallIcon(R.drawable.ic_stat_fluxora)
+                .setLargeIcon(largeLogo)
+                .setColor(ContextCompat.getColor(ctx, R.color.primary));
+    }
+
     public static void showWhatsAppAdded(Context ctx, List<RoutineEvent> added, String chat) {
         StringBuilder sb = new StringBuilder();
         for (RoutineEvent e : added) {
@@ -27,8 +41,7 @@ public class NotificationHelper {
                 new Intent(ctx, MainActivity.class),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, UPDATES_CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+        NotificationCompat.Builder b = baseBuilder(ctx, UPDATES_CHANNEL_ID)
                 .setContentTitle("Added from " + chat)
                 .setContentText(body.split("\n")[0])
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -39,7 +52,6 @@ public class NotificationHelper {
         ctx.getSystemService(NotificationManager.class)
                 .notify((int) (System.currentTimeMillis() & 0x7fffffff), b.build());
     }
-    public static final String UPDATES_CHANNEL_ID = "whatsapp_updates";
 
     public static void createChannel(Context ctx) {
         NotificationManager nm = ctx.getSystemService(NotificationManager.class);
@@ -66,8 +78,7 @@ public class NotificationHelper {
         String time = e.startTime + (e.endTime != null && !e.endTime.isEmpty() ? " – " + e.endTime : "");
         String where = (e.room != null && !e.room.isEmpty()) ? " · Room " + e.room : "";
 
-        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+        NotificationCompat.Builder b = baseBuilder(ctx, CHANNEL_ID)
                 .setContentTitle(e.title)
                 .setContentText("Class started. Are you attending?")
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -83,8 +94,7 @@ public class NotificationHelper {
     }
 
     public static void showConfirmation(Context ctx, int notifId, String title, boolean present) {
-        Notification n = new NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+        Notification n = baseBuilder(ctx, CHANNEL_ID)
                 .setContentTitle(present ? "Marked present" : "Marked absent")
                 .setContentText(title)
                 .setOnlyAlertOnce(true)
@@ -105,6 +115,7 @@ public class NotificationHelper {
         return PendingIntent.getBroadcast(ctx, requestCode, i,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
+
     public static void showReminder(Context ctx, RoutineEvent e) {
         int notifId = (int) e.id;
         PendingIntent open = PendingIntent.getActivity(ctx, notifId,
@@ -119,8 +130,7 @@ public class NotificationHelper {
         }
         if (e.details != null && !e.details.isEmpty()) text += "\n" + e.details;
 
-        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
+        NotificationCompat.Builder b = baseBuilder(ctx, CHANNEL_ID)
                 .setContentTitle(EventAdapter.typeLabel(e.type) + ": " + e.title)
                 .setContentText(text.split("\n")[0])
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
