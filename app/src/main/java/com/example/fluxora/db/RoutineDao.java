@@ -6,6 +6,7 @@ import java.util.List;
 
 @Dao
 public interface RoutineDao {
+
     @Query("DELETE FROM routine_events")
     void deleteAll();
     @Query("SELECT COUNT(*) FROM routine_events WHERE type = :type AND title = :title AND date = :date AND IFNULL(startTime, '') = :startTime")

@@ -66,9 +66,11 @@ public class AccountActivity extends AppCompatActivity {
         }
     }
 
-    // ---------- backup / restore ----------
+    // ---------- backup / restore (with offline check) ----------
 
     private void backup() {
+        if (!NetworkUtils.requireInternet(this)) return;
+
         setBusy(true);
         binding.tvResult.setText("Backing up…");
         CloudBackup.backup(this, new CloudBackup.Callback() {
@@ -92,6 +94,8 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     private void restore() {
+        if (!NetworkUtils.requireInternet(this)) return;
+
         setBusy(true);
         binding.tvResult.setText("Restoring…");
         CloudBackup.restore(this, new CloudBackup.Callback() {
@@ -115,6 +119,8 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     private void confirmRestore() {
+        if (!NetworkUtils.requireInternet(this)) return;
+
         new AlertDialog.Builder(this)
                 .setTitle("Restore from backup?")
                 .setMessage("This replaces the routine and attendance on this phone with your last backup.")
@@ -123,11 +129,11 @@ public class AccountActivity extends AppCompatActivity {
                 .show();
     }
 
-
-
-    // ---------- sign in / out ----------
+    // ---------- sign in / out (with offline check) ----------
 
     private void signIn() {
+        if (!NetworkUtils.requireInternet(this)) return;
+
         GetSignInWithGoogleOption signInOption = new GetSignInWithGoogleOption.Builder(
                 getString(R.string.default_web_client_id)).build();
         GetCredentialRequest request = new GetCredentialRequest.Builder()

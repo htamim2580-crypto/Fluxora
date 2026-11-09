@@ -7,6 +7,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Add these permissions at the top of AndroidManifest.xml -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+
     <application
         android:name=".FluxoraApp"
         android:allowBackup="true"
@@ -17,6 +24,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Fluxora">
+        <!-- Add this inside your <application ...> tag -->
+        <service
+            android:name=".QuickBubbleService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Floating quick-add schedule assistant bubble for students" />
+        </service>
         <receiver android:name=".ClassAlarmReceiver" android:exported="false" />
         <receiver android:name=".AttendanceActionReceiver" android:exported="false" />
         <receiver android:name=".BootReceiver" android:exported="true">

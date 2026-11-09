@@ -12,16 +12,19 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -39,18 +42,21 @@ import com.example.fluxora.db.Attendance;
 import com.example.fluxora.db.RoutineEvent;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -63,6 +69,9 @@ public class MainActivity extends AppCompatActivity {
     private CalendarAdapter calendarAdapter;
     private PaymentAdapter paymentAdapter;
 
+    private DatabaseReference noticeRef;
+    private ValueEventListener noticeListener;
+
     private String routinePrompt;
     private List<RoutineEvent> allEvents = new ArrayList<>();
     private List<Attendance> attendanceList = new ArrayList<>();
@@ -73,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int UPCOMING_TAB = 8;
 
-    // Week starts on Sunday: dayOfWeek 1 = Sunday ... 7 = Saturday
     private static final String[] DAYS =
             {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final String[] SHORT_DAYS =
@@ -114,43 +122,6 @@ public class MainActivity extends AppCompatActivity {
                 + "4=Wednesday, 5=Thursday, 6=Friday, 7=Saturday), "
                 + "\"startTime\" (\"HH:mm\"), \"endTime\" (\"HH:mm\"), \"room\", \"details\"}. "
                 + "If nothing is readable, return [].";
-    }
-
-    private String buildChatPrompt(String message) {
-        LocalDate today = LocalDate.now();
-        String todayStr = today.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.US) + " " + today;
-
-        Map<String, List<String>> byTitle = new LinkedHashMap<>();
-        for (RoutineEvent e : allEvents) {
-            if (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) {
-                byTitle.computeIfAbsent(e.title, k -> new ArrayList<>())
-                        .add(SHORT_DAYS[e.dayOfWeek - 1] + " " + e.startTime);
-            }
-        }
-        StringBuilder courses = new StringBuilder();
-        for (Map.Entry<String, List<String>> en : byTitle.entrySet()) {
-            courses.append("- ").append(en.getKey())
-                    .append(" (").append(String.join(", ", en.getValue())).append(")\n");
-        }
-        if (courses.length() == 0) courses.append("(no classes saved yet)\n");
-
-        return "You turn a student's short message into items for their class routine.\n"
-                + "Today is " + todayStr + ". The week starts on Sunday and classes run Sunday to Thursday.\n"
-                + "The student's regular classes (use these exact titles when the message refers to one):\n"
-                + courses
-                + "Message: \"" + message.replace("\"", "'") + "\"\n"
-                + "Return ONLY a JSON array (an empty array if there is nothing to add). Each item:\n"
-                + "{\"type\": one of EXTRA_CLASS, CANCELLED, ASSIGNMENT, DEADLINE, OTHER, "
-                + "\"title\": the exact course title from the list when the message refers to one, otherwise a short title, "
-                + "\"date\": \"yyyy-MM-dd\" (work out words like tomorrow, Sunday or next Thursday from today's date), "
-                + "\"startTime\": \"HH:mm\" in 24-hour time, or \"\" if not mentioned, "
-                + "\"endTime\": \"HH:mm\" or \"\", \"room\": \"\" if not mentioned, "
-                + "\"details\": short extra info such as assignment topic, marks or what to submit}\n"
-                + "Rules:\n"
-                + "- A cancelled regular class is type CANCELLED, with the class's usual startTime from the list.\n"
-                + "- If a regular class is moved, return two items: CANCELLED for the original date and EXTRA_CLASS for the new date and time.\n"
-                + "- ASSIGNMENT: date is the due date. DEADLINE: any other deadline. OTHER: quizzes, tests and notes.\n"
-                + "- Every item needs a date. Do not invent details that were not in the message.";
     }
 
     // ---------- lifecycle ----------
@@ -252,9 +223,12 @@ public class MainActivity extends AppCompatActivity {
         binding.btnAccount.setOnClickListener(v -> startActivity(new Intent(this, AccountActivity.class)));
         binding.btnSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
         binding.btnImport.setOnClickListener(v -> {
+            if (!NetworkUtils.requireInternet(this)) return;
             routinePrompt = buildRoutinePrompt(UserProfile.section(this), UserProfile.group(this));
             imagePicker.launch("image/*");
         });
+        binding.btnBubble.setOnClickListener(v -> toggleQuickBubble());
+        binding.btnPostNotice.setOnClickListener(v -> showPostNoticeDialog());
         binding.tvHeader.setOnClickListener(v -> showProfileDialog(true));
 
         // --- FIXED BOTTOM DOCK NAVIGATION ---
@@ -262,7 +236,6 @@ public class MainActivity extends AppCompatActivity {
         binding.btnAttendance.setOnClickListener(v -> switchTab(1));
         binding.btnPayments.setOnClickListener(v -> switchTab(2));
 
-        // Pressing Back on Calendar or Ledger smoothly returns to Schedule instead of closing the app
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -276,6 +249,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         refreshCalendar();
+        subscribeToSectionNoticeBoard();
         requestSmsPermissions();
         if (!UserProfile.isSet(this)) showProfileDialog(false);
         NotificationHelper.createChannel(this);
@@ -283,6 +257,19 @@ public class MainActivity extends AppCompatActivity {
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
             notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
+
+        if (getIntent() != null && getIntent().getBooleanExtra("quick_add", false)) {
+            showAddDialog();
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent != null && intent.getBooleanExtra("quick_add", false)) {
+            switchTab(0);
+            showAddDialog();
         }
     }
 
@@ -296,6 +283,99 @@ public class MainActivity extends AppCompatActivity {
         int ai = AiPrefs.enabled() ? View.VISIBLE : View.GONE;
         binding.chatBar.setVisibility(ai);
         binding.btnImport.setVisibility(ai);
+        binding.btnBubble.setText(QuickBubbleService.isRunning ? "Stop Bubble" : "+ Quick Bubble");
+    }
+
+    // ---------- Foreground Service: Quick-Add Bubble ----------
+
+    private void toggleQuickBubble() {
+        if (QuickBubbleService.isRunning) {
+            stopService(new Intent(this, QuickBubbleService.class));
+            binding.btnBubble.setText("+ Quick Bubble");
+            Toast.makeText(this, "Quick-add bubble stopped", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "Grant 'Display over other apps' permission for the bubble", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())));
+            return;
+        }
+        Intent serviceIntent = new Intent(this, QuickBubbleService.class);
+        ContextCompat.startForegroundService(this, serviceIntent);
+        binding.btnBubble.setText("Stop Bubble");
+        Toast.makeText(this, "Floating quick-add bubble active", Toast.LENGTH_SHORT).show();
+    }
+
+    // ---------- Live Section Notice Board (Firebase Realtime Database) ----------
+
+    private void subscribeToSectionNoticeBoard() {
+        String sec = UserProfile.section(this);
+        if (sec == null || sec.isEmpty()) sec = "A";
+        binding.tvNoticeHeader.setText("LIVE SECTION " + sec + " NOTICE BOARD");
+
+        if (noticeRef != null && noticeListener != null) {
+            noticeRef.removeEventListener(noticeListener);
+        }
+
+        noticeRef = FirebaseDatabase.getInstance().getReference("section_notices").child("SEC_" + sec);
+        noticeListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String text = snapshot.child("text").getValue(String.class);
+                String author = snapshot.child("author").getValue(String.class);
+                if (text != null && !text.trim().isEmpty()) {
+                    String prefix = (author != null && !author.isEmpty()) ? ("[" + author + "] ") : "";
+                    binding.tvNoticeBoard.setText(prefix + text);
+                } else {
+                    binding.tvNoticeBoard.setText("No live notices for Section " + UserProfile.section(MainActivity.this) + " yet.");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        };
+        noticeRef.addValueEventListener(noticeListener);
+    }
+
+    private void showPostNoticeDialog() {
+        if (!NetworkUtils.requireInternet(this)) return;
+
+        String sec = UserProfile.section(this);
+        EditText input = new EditText(this);
+        input.setHint("e.g. Tomorrow's CSE 2201 CT moved to 11:00 AM");
+        int pad = Math.round(20 * getResources().getDisplayMetrics().density);
+        input.setPadding(pad, pad, pad, pad);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Post to Section " + sec + " Board")
+                .setView(input)
+                .setPositiveButton("Post Live", (d, w) -> {
+                    if (!NetworkUtils.requireInternet(this)) return;
+                    String msg = input.getText().toString().trim();
+                    if (msg.isEmpty()) return;
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("text", msg);
+                    data.put("author", "Roll " + UserProfile.roll(this));
+                    data.put("timestamp", System.currentTimeMillis());
+                    FirebaseDatabase.getInstance()
+                            .getReference("section_notices")
+                            .child("SEC_" + sec)
+                            .setValue(data)
+                            .addOnSuccessListener(unused ->
+                                    Toast.makeText(this, "Notice posted live!", Toast.LENGTH_SHORT).show())
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, "Could not post: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                })
+                .setNeutralButton("Clear Board", (d, w) -> {
+                    if (!NetworkUtils.requireInternet(this)) return;
+                    FirebaseDatabase.getInstance()
+                            .getReference("section_notices")
+                            .child("SEC_" + sec)
+                            .removeValue();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     // ---------- bottom dock tab switching & directional animation ----------
@@ -303,7 +383,6 @@ public class MainActivity extends AppCompatActivity {
     private void switchTab(int targetTab) {
         if (targetTab == currentTab) return;
 
-        // Forward (0 -> 1 -> 2) slides Right-to-Left; Backward (2 -> 1 -> 0) slides Left-to-Right
         if (targetTab > currentTab) {
             binding.viewFlipper.setInAnimation(this, R.anim.slide_in_right);
             binding.viewFlipper.setOutAnimation(this, R.anim.slide_out_left);
@@ -349,12 +428,10 @@ public class MainActivity extends AppCompatActivity {
 
     // ---------- day helpers ----------
 
-    /** 1 = Sunday ... 7 = Saturday */
     private int todayNumber() {
         return LocalDate.now().getDayOfWeek().getValue() % 7 + 1;
     }
 
-    /** Most recent date (today or earlier) that falls on the given day number. */
     private LocalDate latestDateFor(int dayNum) {
         LocalDate today = LocalDate.now();
         if (dayNum < 1 || dayNum > 7) return today;
@@ -405,7 +482,7 @@ public class MainActivity extends AppCompatActivity {
         binding.tvMonth.setText(month.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US)));
 
         List<LocalDate> days = new ArrayList<>();
-        int offset = month.atDay(1).getDayOfWeek().getValue() % 7;   // Sunday = 0 blanks
+        int offset = month.atDay(1).getDayOfWeek().getValue() % 7;
         for (int i = 0; i < offset; i++) days.add(null);
         for (int d = 1; d <= month.lengthOfMonth(); d++) days.add(month.atDay(d));
 
@@ -511,11 +588,13 @@ public class MainActivity extends AppCompatActivity {
                 db.attendanceDao().remove(event.title, date.toString(), event.startTime));
     }
 
-    // ---------- chat box ----------
+    // ---------- chat box (with offline check) ----------
 
     private void sendChat() {
         String msg = binding.etChat.getText().toString().trim();
         if (msg.isEmpty()) return;
+        if (!NetworkUtils.requireInternet(this)) return;
+
         binding.btnSend.setEnabled(false);
         AiClient.ask(PromptBuilder.update(this, msg, allEvents, false), null, new AiClient.Callback() {
             @Override public void onSuccess(String text) {
@@ -576,7 +655,7 @@ public class MainActivity extends AppCompatActivity {
                     RoutineEvent e = new RoutineEvent();
                     e.title = title;
                     e.type = "CLASS";
-                    e.dayOfWeek = d.spDay.getSelectedItemPosition() + 1;   // Sunday = 1
+                    e.dayOfWeek = d.spDay.getSelectedItemPosition() + 1;
                     e.startTime = d.etStart.getText().toString().trim();
                     e.endTime = d.etEnd.getText().toString().trim();
                     e.room = d.etRoom.getText().toString().trim();
@@ -599,7 +678,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ---------- photo import ----------
+    // ---------- photo import (with offline check) ----------
 
     private Bitmap loadScaled(Uri uri) throws IOException {
         BitmapFactory.Options o = new BitmapFactory.Options();
@@ -617,6 +696,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void importRoutineFrom(Uri uri) {
+        if (!NetworkUtils.requireInternet(this)) return;
+
         Bitmap bmp;
         try {
             bmp = loadScaled(uri);
@@ -641,7 +722,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    /** Parses the AI reply and shows the review dialog. Returns true if there was something to review. */
     private boolean reviewFromJson(String json, String source) {
         List<RoutineEvent> parsed = RoutineParser.tryParse(json, source);
         if (parsed == null) {
@@ -723,6 +803,7 @@ public class MainActivity extends AppCompatActivity {
             }
             UserProfile.save(this, roll, groups[d.spGroup.getSelectedItemPosition()],
                     d.etPhone.getText().toString().trim());
+            subscribeToSectionNoticeBoard(); // Re-bind live notice board if section changed
             dialog.dismiss();
         });
     }

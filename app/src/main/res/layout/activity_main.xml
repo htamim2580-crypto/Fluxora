@@ -8,7 +8,7 @@
     android:background="?android:attr/colorBackground"
     android:fitsSystemWindows="true">
 
-    <!-- BACKGROUND CONTENT AREA (Slides Left/Right While Bottom Bar Stays Fixed) -->
+    <!-- BACKGROUND CONTENT AREA -->
     <ViewFlipper
         android:id="@+id/viewFlipper"
         android:layout_width="0dp"
@@ -48,6 +48,7 @@
                         android:id="@+id/tvHeader"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif"
                         android:letterSpacing="-0.02"
                         android:text="Schedule"
                         android:textColor="?attr/colorOnBackground"
@@ -58,6 +59,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif"
                         android:text="Plan today. Build tomorrow."
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="13sp" />
@@ -111,7 +113,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:layout_marginEnd="20dp"
                 android:background="@drawable/bg_floating_dock"
                 android:gravity="center_vertical"
@@ -130,6 +132,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@null"
+                    android:fontFamily="sans-serif"
                     android:hint="Ask AI to update schedule..."
                     android:inputType="textCapSentences|textMultiLine"
                     android:maxLines="2"
@@ -152,66 +155,172 @@
                     android:textSize="12sp" />
             </LinearLayout>
 
-            <!-- Quick-Import Chips Row -->
-            <LinearLayout
+            <!-- Quick-Action Chips Row (Photo Import, WhatsApp, Floating Bubble Service) -->
+            <HorizontalScrollView
                 android:id="@+id/aiQuickActions"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
                 android:layout_marginTop="8dp"
-                android:layout_marginEnd="20dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
+                android:clipToPadding="false"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:scrollbars="none"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/chatBar">
 
-                <Button
-                    android:id="@+id/btnImport"
-                    style="@style/Widget.Material3.Button.TonalButton"
+                <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:minHeight="34dp"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="+ Scan Routine Photo"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="11sp"
-                    app:backgroundTint="?attr/colorSurface"
-                    app:cornerRadius="999dp" />
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/btnWhatsApp"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:layout_marginStart="8dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:minHeight="34dp"
+                    <Button
+                        android:id="@+id/btnImport"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="34dp"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="+ Scan Routine Photo"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="11sp"
+                        app:backgroundTint="?attr/colorSurface"
+                        app:cornerRadius="999dp" />
+
+                    <Button
+                        android:id="@+id/btnWhatsApp"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="8dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="34dp"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="+ WhatsApp Sync"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="11sp"
+                        app:backgroundTint="?attr/colorSurface"
+                        app:cornerRadius="999dp" />
+
+                    <Button
+                        android:id="@+id/btnBubble"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="8dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="34dp"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="+ Quick Bubble"
+                        android:textColor="?attr/colorOnSecondaryContainer"
+                        android:textSize="11sp"
+                        app:backgroundTint="?attr/colorSecondaryContainer"
+                        app:cornerRadius="999dp" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- LIVE SECTION NOTICE BOARD (Firebase Realtime Database) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardNoticeBoard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="20dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:contentPadding="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/aiQuickActions"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="+ Sync WhatsApp Notice"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="11sp"
-                    app:backgroundTint="?attr/colorSurface"
-                    app:cornerRadius="999dp" />
-            </LinearLayout>
+                    android:paddingTop="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="10dp">
+
+                    <View
+                        android:layout_width="3dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="?attr/colorTertiary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvNoticeHeader"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif"
+                            android:letterSpacing="0.04"
+                            android:text="LIVE SECTION NOTICE BOARD"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvNoticeBoard"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif"
+                            android:maxLines="2"
+                            android:text="No live section notices posted yet."
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnPostNotice"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="34dp"
+                        android:minWidth="0dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:text="Post"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Pill Day Selector -->
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/tabDays"
                 android:layout_width="0dp"
-                android:layout_height="52dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
                 android:background="@android:color/transparent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/aiQuickActions"
+                app:layout_constraintTop_toBottomOf="@id/cardNoticeBoard"
                 app:tabBackground="@android:color/transparent"
                 app:tabGravity="fill"
                 app:tabIndicator="@drawable/bg_tab_pill_selector"
@@ -231,7 +340,7 @@
                 android:id="@+id/rvEvents"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="4dp"
                 android:clipToPadding="false"
                 android:paddingStart="16dp"
                 android:paddingTop="8dp"
@@ -246,7 +355,8 @@
                 android:id="@+id/tvEmpty"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.02"
+                android:fontFamily="sans-serif"
+                android:letterSpacing="0.01"
                 android:text="No classes scheduled for this day"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="15sp"
@@ -268,10 +378,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:fontFamily="serif"
+                android:fontFamily="sans-serif"
+                android:letterSpacing="-0.02"
                 android:text="Attendance Calendar"
                 android:textColor="?attr/colorOnBackground"
-                android:textSize="26sp"
+                android:textSize="28sp"
                 android:textStyle="bold" />
 
             <LinearLayout
@@ -297,9 +408,9 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:fontFamily="serif"
+                    android:fontFamily="sans-serif"
                     android:gravity="center"
-                    android:letterSpacing="0.02"
+                    android:letterSpacing="-0.01"
                     android:textColor="?attr/colorOnBackground"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -337,13 +448,13 @@
                         android:paddingTop="4dp"
                         android:paddingBottom="10dp">
 
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="M" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="W" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="F" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif" android:gravity="center" android:text="M" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif" android:gravity="center" android:text="W" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif" android:gravity="center" android:text="T" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif" android:gravity="center" android:text="F" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif" android:gravity="center" android:text="S" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" android:textStyle="bold" />
                     </LinearLayout>
 
                     <androidx.recyclerview.widget.RecyclerView
@@ -358,6 +469,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:fontFamily="sans-serif"
                 android:gravity="center"
                 android:lineSpacingExtra="4dp"
                 android:padding="12dp"
@@ -376,13 +488,14 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="serif"
+                android:fontFamily="sans-serif"
+                android:letterSpacing="-0.02"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
                 android:paddingBottom="16dp"
                 android:text="Payments &amp; Ledger"
                 android:textColor="?attr/colorOnBackground"
-                android:textSize="26sp"
+                android:textSize="28sp"
                 android:textStyle="bold" />
 
             <com.google.android.material.card.MaterialCardView
@@ -401,7 +514,8 @@
                     android:id="@+id/tvTotal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="serif"
+                    android:fontFamily="sans-serif"
+                    android:letterSpacing="-0.01"
                     android:padding="22dp"
                     android:textColor="?attr/colorOnSecondaryContainer"
                     android:textSize="20sp"
@@ -420,7 +534,7 @@
 
     </ViewFlipper>
 
-    <!-- PERMANENT FLOATING BOTTOM PILL DOCK (Never Moves or Reloads!) -->
+    <!-- PERMANENT FLOATING BOTTOM PILL DOCK -->
     <LinearLayout
         android:id="@+id/bottomBar"
         android:layout_width="0dp"
@@ -446,6 +560,7 @@
             android:layout_height="46dp"
             android:layout_weight="1.05"
             android:background="@drawable/bg_tab_pill_selector"
+            android:fontFamily="sans-serif"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:maxLines="1"
@@ -471,6 +586,7 @@
             android:layout_width="0dp"
             android:layout_height="46dp"
             android:layout_weight="1.15"
+            android:fontFamily="sans-serif"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:maxLines="1"
@@ -495,6 +611,7 @@
             android:layout_width="0dp"
             android:layout_height="46dp"
             android:layout_weight="1"
+            android:fontFamily="sans-serif"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:maxLines="1"

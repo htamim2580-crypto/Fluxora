@@ -49,6 +49,8 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void testKey() {
+        if (!NetworkUtils.requireInternet(this)) return;
+
         String typed = typedKey();
         String key = typed.isEmpty() ? AiPrefs.effectiveKey() : typed;
         if (key == null || key.isEmpty()) {
