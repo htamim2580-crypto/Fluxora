@@ -1,9 +1,13 @@
 package com.example.fluxora;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.CancellationSignal;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
-import androidx.appcompat.app.AlertDialog;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.credentials.ClearCredentialStateRequest;
@@ -15,18 +19,36 @@ import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 import androidx.credentials.exceptions.ClearCredentialException;
 import androidx.credentials.exceptions.GetCredentialException;
+
 import com.example.fluxora.databinding.ActivityAccountBinding;
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
+import java.util.Arrays;
+
 public class AccountActivity extends AppCompatActivity {
 
     private ActivityAccountBinding binding;
     private FirebaseAuth auth;
+    private static final String[] GROUPS = {"A1", "A2", "B1", "B2"};
+
+    private final ActivityResultLauncher<String> photoPicker =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) {
+                    Bitmap circle = ProfileAvatarHelper.saveCircularAvatar(this, uri);
+                    if (circle != null) {
+                        binding.ivProfilePic.setPadding(0, 0, 0, 0);
+                        binding.ivProfilePic.setImageTintList(null);
+                        binding.ivProfilePic.setImageBitmap(circle);
+                        Toast.makeText(this, "Profile picture updated ✓", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,11 +57,58 @@ public class AccountActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         auth = FirebaseAuth.getInstance();
+
+        // Populate Editable Profile Fields
+        binding.spProfileGroup.setAdapter(new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item, GROUPS));
+        loadProfileFields();
+
+        binding.avatarContainer.setOnClickListener(v -> photoPicker.launch("image/*"));
+        binding.btnChangePhoto.setOnClickListener(v -> photoPicker.launch("image/*"));
+        binding.btnSaveProfile.setOnClickListener(v -> saveProfileFields());
+
+        // Google Auth & Cloud Backup Listeners
         binding.btnSignIn.setOnClickListener(v -> signIn());
         binding.btnSignOut.setOnClickListener(v -> signOut());
         binding.btnBackup.setOnClickListener(v -> backup());
         binding.btnRestore.setOnClickListener(v -> confirmRestore());
         updateUi();
+    }
+
+    private void loadProfileFields() {
+        Bitmap avatar = ProfileAvatarHelper.loadCircularAvatar(this);
+        if (avatar != null) {
+            binding.ivProfilePic.setPadding(0, 0, 0, 0);
+            binding.ivProfilePic.setImageTintList(null);
+            binding.ivProfilePic.setImageBitmap(avatar);
+        }
+
+        String savedName = ProfileAvatarHelper.getName(this);
+        if (savedName.isEmpty() && auth.getCurrentUser() != null && auth.getCurrentUser().getDisplayName() != null) {
+            savedName = auth.getCurrentUser().getDisplayName();
+        }
+        binding.etProfileName.setText(savedName);
+        binding.etProfileRoll.setText(UserProfile.roll(this));
+        binding.etProfilePhone.setText(UserProfile.phone(this));
+
+        int idx = Arrays.asList(GROUPS).indexOf(UserProfile.group(this));
+        if (idx >= 0) binding.spProfileGroup.setSelection(idx);
+    }
+
+    private void saveProfileFields() {
+        String name = binding.etProfileName.getText().toString().trim();
+        String roll = binding.etProfileRoll.getText().toString().trim();
+        String phone = binding.etProfilePhone.getText().toString().trim();
+        String group = GROUPS[binding.spProfileGroup.getSelectedItemPosition()];
+
+        if (roll.isEmpty()) {
+            binding.etProfileRoll.setError("Roll number is required");
+            return;
+        }
+
+        ProfileAvatarHelper.setName(this, name);
+        UserProfile.save(this, roll, group, phone);
+        Toast.makeText(this, "Profile saved ✓", Toast.LENGTH_SHORT).show();
     }
 
     private void updateUi() {
@@ -50,6 +119,10 @@ public class AccountActivity extends AppCompatActivity {
         } else {
             String name = user.getDisplayName() == null ? "" : user.getDisplayName() + "\n";
             binding.tvStatus.setText("Signed in as\n" + name + user.getEmail());
+            if (binding.etProfileName.getText().toString().trim().isEmpty() && user.getDisplayName() != null) {
+                binding.etProfileName.setText(user.getDisplayName());
+                ProfileAvatarHelper.setName(this, user.getDisplayName());
+            }
         }
         binding.btnSignIn.setEnabled(!signed);
         binding.btnSignOut.setEnabled(signed);
@@ -66,7 +139,7 @@ public class AccountActivity extends AppCompatActivity {
         }
     }
 
-    // ---------- backup / restore (with offline check) ----------
+    // ---------- backup / restore ----------
 
     private void backup() {
         if (!NetworkUtils.requireInternet(this)) return;
@@ -102,6 +175,7 @@ public class AccountActivity extends AppCompatActivity {
             @Override public void onDone(String message) {
                 SettingsSync.pull(AccountActivity.this, new SettingsSync.Callback() {
                     @Override public void onDone() {
+                        loadProfileFields();
                         binding.tvResult.setText(message + "\nProfile and WhatsApp settings restored");
                         setBusy(false);
                     }
@@ -121,7 +195,7 @@ public class AccountActivity extends AppCompatActivity {
     private void confirmRestore() {
         if (!NetworkUtils.requireInternet(this)) return;
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Restore from backup?")
                 .setMessage("This replaces the routine and attendance on this phone with your last backup.")
                 .setPositiveButton("Restore", (d, w) -> restore())
@@ -129,7 +203,7 @@ public class AccountActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ---------- sign in / out (with offline check) ----------
+    // ---------- sign in / out ----------
 
     private void signIn() {
         if (!NetworkUtils.requireInternet(this)) return;

@@ -5,10 +5,12 @@ import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,6 +43,7 @@ import com.example.fluxora.db.AppDatabase;
 import com.example.fluxora.db.Attendance;
 import com.example.fluxora.db.RoutineEvent;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -146,16 +149,21 @@ public class MainActivity extends AppCompatActivity {
         // --- PAGE 0: SCHEDULE SETUP ---
         adapter = new EventAdapter(new EventAdapter.Listener() {
             @Override public void onClick(RoutineEvent e) {
+                if (e == null) return;
                 if (e.dayOfWeek >= 1 && e.dayOfWeek <= 7) {
                     showAttendanceDialog(e, latestDateFor(e.dayOfWeek));
-                } else if ("EXTRA_CLASS".equals(e.type) && e.date != null) {
-                    showAttendanceDialog(e, LocalDate.parse(e.date));
+                } else if ("EXTRA_CLASS".equals(e.type) && e.date != null && !e.date.isEmpty()) {
+                    try {
+                        showAttendanceDialog(e, LocalDate.parse(e.date));
+                    } catch (Exception ex) {
+                        showInfo(e);
+                    }
                 } else {
                     showInfo(e);
                 }
             }
             @Override public void onLongClick(RoutineEvent e) {
-                confirmDelete(e);
+                if (e != null) confirmDelete(e);
             }
         });
         binding.rvEvents.setLayoutManager(new LinearLayoutManager(this));
@@ -210,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
 
         // --- DATABASE OBSERVERS ---
         db.routineDao().getAll().observe(this, events -> {
-            allEvents = events;
+            allEvents = (events != null) ? events : new ArrayList<>();
             refreshList();
             ClassScheduler.scheduleAllAsync(this);
         });
@@ -248,6 +256,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Restore selected day & bottom tab on screen rotation
+        if (savedInstanceState != null) {
+            selectedDay = savedInstanceState.getInt("selected_day", todayNumber());
+            TabLayout.Tab restoredTab = binding.tabDays.getTabAt(selectedDay - 1);
+            if (restoredTab != null) restoredTab.select();
+
+            int savedBottomTab = savedInstanceState.getInt("current_tab", 0);
+            if (savedBottomTab != 0) switchTab(savedBottomTab);
+        }
+
+        applyLandscapeCompactMode();
         refreshCalendar();
         subscribeToSectionNoticeBoard();
         requestSmsPermissions();
@@ -284,6 +303,48 @@ public class MainActivity extends AppCompatActivity {
         binding.chatBar.setVisibility(ai);
         binding.btnImport.setVisibility(ai);
         binding.btnBubble.setText(QuickBubbleService.isRunning ? "Stop Bubble" : "+ Quick Bubble");
+        refreshProfileHeaderAndAvatar();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("current_tab", currentTab);
+        outState.putInt("selected_day", selectedDay);
+    }
+
+    private void applyLandscapeCompactMode() {
+        boolean landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+        int topPad = Math.round((landscape ? 8 : 20) * getResources().getDisplayMetrics().density);
+        binding.topHeaderContainer.setPadding(
+                binding.topHeaderContainer.getPaddingLeft(),
+                topPad,
+                binding.topHeaderContainer.getPaddingRight(),
+                binding.topHeaderContainer.getPaddingBottom());
+    }
+
+    private void refreshProfileHeaderAndAvatar() {
+        Bitmap avatar = ProfileAvatarHelper.loadCircularAvatar(this);
+        if (binding.btnAccount instanceof MaterialButton) {
+            MaterialButton mb = (MaterialButton) binding.btnAccount;
+            if (avatar != null) {
+                int sizePx = Math.round(44 * getResources().getDisplayMetrics().density);
+                mb.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+                mb.setIconTint(null);
+                mb.setIconPadding(0);
+                mb.setPadding(0, 0, 0, 0);
+                mb.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_TOP);
+                mb.setIconSize(sizePx);
+                mb.setIcon(new BitmapDrawable(getResources(), avatar));
+            }
+        }
+
+        String name = ProfileAvatarHelper.getName(this);
+        if (name != null && !name.isEmpty()) {
+            binding.tvHeader.setText("Hi, " + name.split(" ")[0]);
+        } else {
+            binding.tvHeader.setText("Schedule");
+        }
     }
 
     // ---------- Foreground Service: Quick-Add Bubble ----------
@@ -347,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
         int pad = Math.round(20 * getResources().getDisplayMetrics().density);
         input.setPadding(pad, pad, pad, pad);
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Post to Section " + sec + " Board")
                 .setView(input)
                 .setPositiveButton("Post Live", (d, w) -> {
@@ -466,9 +527,9 @@ public class MainActivity extends AppCompatActivity {
     // ---------- attendance & calendar ----------
 
     private void applyAttendance(List<Attendance> list) {
-        attendanceList = list;
+        attendanceList = (list != null) ? list : new ArrayList<>();
         Map<String, int[]> stats = new HashMap<>();
-        for (Attendance a : list) {
+        for (Attendance a : attendanceList) {
             int[] v = stats.computeIfAbsent(a.courseTitle, k -> new int[2]);
             if (a.present) v[0]++;
             v[1]++;
@@ -511,7 +572,7 @@ public class MainActivity extends AppCompatActivity {
             Attendance a = records.get(i);
             items[i] = (a.present ? "✓ " : "✗ ") + a.courseTitle + "  (" + a.startTime + ")";
         }
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(label)
                 .setItems(items, (dialog, which) -> editCalendarRecord(records.get(which)))
                 .setNegativeButton("Close", null)
@@ -520,7 +581,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void editCalendarRecord(Attendance a) {
         String[] options = {"Mark present", "Mark absent", "Delete this record"};
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(a.courseTitle)
                 .setItems(options, (dialog, which) -> {
                     if (which == 2) {
@@ -539,6 +600,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String statusFor(RoutineEvent event, LocalDate date) {
+        if (attendanceList == null || event == null || date == null) return "Not recorded";
         for (Attendance a : attendanceList) {
             if (java.util.Objects.equals(a.courseTitle, event.title)
                     && java.util.Objects.equals(a.date, date.toString())
@@ -552,7 +614,7 @@ public class MainActivity extends AppCompatActivity {
     private void showAttendanceDialog(RoutineEvent event, LocalDate date) {
         String label = date.format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy", Locale.US));
         String[] options = {"Present", "Absent", "Remove record", "Change date…"};
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(event.title + "\n" + label + " · " + statusFor(event, date))
                 .setItems(options, (dialog, which) -> {
                     switch (which) {
@@ -615,7 +677,7 @@ public class MainActivity extends AppCompatActivity {
         if (!nz(e.endTime).isEmpty()) sb.append(" - ").append(e.endTime);
         if (!nz(e.room).isEmpty()) sb.append("\nRoom: ").append(e.room);
         if (!nz(e.details).isEmpty()) sb.append("\n").append(e.details);
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(e.title)
                 .setMessage(sb.toString())
                 .setPositiveButton("OK", null)
@@ -643,7 +705,7 @@ public class MainActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_dropdown_item, DAYS));
         d.spDay.setSelection((selectedDay <= 7 ? selectedDay : todayNumber()) - 1);
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Add to routine")
                 .setView(d.getRoot())
                 .setPositiveButton("Save", (dialog, which) -> {
@@ -668,7 +730,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void confirmDelete(RoutineEvent event) {
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete \"" + event.title + "\"?")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     ClassScheduler.cancel(this, event.id);
@@ -708,7 +770,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Couldn't open that image", Toast.LENGTH_SHORT).show();
             return;
         }
-        AlertDialog loading = new AlertDialog.Builder(this)
+        AlertDialog loading = new MaterialAlertDialogBuilder(this)
                 .setMessage("Reading your routine…").setCancelable(false).show();
         AiClient.ask(routinePrompt, bmp, new AiClient.Callback() {
             @Override public void onSuccess(String text) {
@@ -756,7 +818,7 @@ public class MainActivity extends AppCompatActivity {
             checked[i] = true;
         }
         final boolean showUpcoming = anyDated;
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Add these?")
                 .setMultiChoiceItems(labels, checked, (d, which, isChecked) -> checked[which] = isChecked)
                 .setPositiveButton("Add selected", (d, w) ->
@@ -788,7 +850,7 @@ public class MainActivity extends AppCompatActivity {
             int idx = Arrays.asList(groups).indexOf(UserProfile.group(this));
             if (idx >= 0) d.spGroup.setSelection(idx);
         }
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle(editing ? "Edit profile" : "Welcome to Fluxora")
                 .setView(d.getRoot())
                 .setCancelable(editing)
@@ -803,7 +865,7 @@ public class MainActivity extends AppCompatActivity {
             }
             UserProfile.save(this, roll, groups[d.spGroup.getSelectedItemPosition()],
                     d.etPhone.getText().toString().trim());
-            subscribeToSectionNoticeBoard(); // Re-bind live notice board if section changed
+            subscribeToSectionNoticeBoard();
             dialog.dismiss();
         });
     }
@@ -815,7 +877,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showWhatsAppDialog() {
         if (!hasListenerAccess()) {
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                     .setTitle("Allow notification access")
                     .setMessage("Fluxora reads WhatsApp notifications to find class updates. "
                             + "Only the groups you choose are used.\n\nTurn on Fluxora in the next screen.")
@@ -832,7 +894,7 @@ public class MainActivity extends AppCompatActivity {
             if (!chats.contains(s)) chats.add(s);
         }
         if (chats.isEmpty()) {
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                     .setTitle("WhatsApp class groups")
                     .setMessage("No chats seen yet. When someone posts in your class group "
                             + "(notifications must be on for it), it shows up here. Then come back and tick it.")
@@ -846,7 +908,7 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < names.length; i++) checked[i] = selected.contains(names[i]);
 
         boolean on = WhatsAppPrefs.enabled(this);
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(on ? "Which chats are your class groups?" : "Paused. Pick your class groups")
                 .setMultiChoiceItems(names, checked, (d, which, isChecked) -> checked[which] = isChecked)
                 .setPositiveButton("Save", (d, w) -> {

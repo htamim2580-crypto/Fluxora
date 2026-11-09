@@ -18,248 +18,31 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- ================= PAGE 0: SCHEDULE ================= -->
-        <androidx.constraintlayout.widget.ConstraintLayout
+
+        <!-- ================= PAGE 0: SCHEDULE (Scrolls Header + List Together) ================= -->
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingBottom="110dp">
 
-            <!-- Top Header Bar -->
             <LinearLayout
-                android:id="@+id/topHeaderContainer"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="24dp"
-                android:paddingTop="20dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="8dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                android:orientation="vertical">
 
+                <!-- Top Header Bar -->
                 <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/tvHeader"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif"
-                        android:letterSpacing="-0.02"
-                        android:text="Schedule"
-                        android:textColor="?attr/colorOnBackground"
-                        android:textSize="28sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="sans-serif"
-                        android:text="Plan today. Build tomorrow."
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:textSize="13sp" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnSettings"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:contentDescription="Settings"
-                    android:insetLeft="0dp"
-                    android:insetTop="0dp"
-                    android:insetRight="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="0dp"
-                    android:text=""
-                    app:backgroundTint="?attr/colorSurface"
-                    app:cornerRadius="999dp"
-                    app:icon="@drawable/ic_nav_settings"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:iconSize="20dp"
-                    app:iconTint="?attr/colorOnSurface" />
-
-                <Button
-                    android:id="@+id/btnAccount"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_marginStart="8dp"
-                    android:contentDescription="Account"
-                    android:insetLeft="0dp"
-                    android:insetTop="0dp"
-                    android:insetRight="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="0dp"
-                    android:text=""
-                    app:backgroundTint="?attr/colorSecondaryContainer"
-                    app:cornerRadius="999dp"
-                    app:icon="@drawable/ic_nav_user"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:iconSize="20dp"
-                    app:iconTint="?attr/colorOnSecondaryContainer" />
-            </LinearLayout>
-
-            <!-- AI Prompt Pill -->
-            <LinearLayout
-                android:id="@+id/chatBar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="6dp"
-                android:layout_marginEnd="20dp"
-                android:background="@drawable/bg_floating_dock"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="18dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="6dp"
-                android:paddingBottom="4dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/topHeaderContainer">
-
-                <EditText
-                    android:id="@+id/etChat"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@null"
-                    android:fontFamily="sans-serif"
-                    android:hint="Ask AI to update schedule..."
-                    android:inputType="textCapSentences|textMultiLine"
-                    android:maxLines="2"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?attr/colorOnSurfaceVariant"
-                    android:textSize="13sp" />
-
-                <Button
-                    android:id="@+id/btnSend"
-                    style="@style/Widget.Fluxora.Button.Primary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="8dp"
-                    android:minHeight="38dp"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:text="Update"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <!-- Quick-Action Chips Row (Photo Import, WhatsApp, Floating Bubble Service) -->
-            <HorizontalScrollView
-                android:id="@+id/aiQuickActions"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:clipToPadding="false"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:scrollbars="none"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/chatBar">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnImport"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="34dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="+ Scan Routine Photo"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="11sp"
-                        app:backgroundTint="?attr/colorSurface"
-                        app:cornerRadius="999dp" />
-
-                    <Button
-                        android:id="@+id/btnWhatsApp"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
-                        android:layout_marginStart="8dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="34dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="+ WhatsApp Sync"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="11sp"
-                        app:backgroundTint="?attr/colorSurface"
-                        app:cornerRadius="999dp" />
-
-                    <Button
-                        android:id="@+id/btnBubble"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
-                        android:layout_marginStart="8dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="34dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="+ Quick Bubble"
-                        android:textColor="?attr/colorOnSecondaryContainer"
-                        android:textSize="11sp"
-                        app:backgroundTint="?attr/colorSecondaryContainer"
-                        app:cornerRadius="999dp" />
-                </LinearLayout>
-            </HorizontalScrollView>
-
-            <!-- LIVE SECTION NOTICE BOARD (Firebase Realtime Database) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardNoticeBoard"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="20dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="0dp"
-                app:contentPadding="0dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/aiQuickActions"
-                app:strokeColor="?attr/colorOutlineVariant"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
+                    android:id="@+id/topHeaderContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingTop="10dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="10dp">
-
-                    <View
-                        android:layout_width="3dp"
-                        android:layout_height="28dp"
-                        android:layout_marginEnd="12dp"
-                        android:background="?attr/colorTertiary" />
+                    android:paddingStart="24dp"
+                    android:paddingTop="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="8dp">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -268,106 +51,318 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tvNoticeHeader"
+                            android:id="@+id/tvHeader"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif"
-                            android:letterSpacing="0.04"
-                            android:text="LIVE SECTION NOTICE BOARD"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="10sp"
+                            android:letterSpacing="-0.02"
+                            android:text="Schedule"
+                            android:textColor="?attr/colorOnBackground"
+                            android:textSize="28sp"
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id="@+id/tvNoticeBoard"
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:ellipsize="end"
                             android:fontFamily="sans-serif"
-                            android:maxLines="2"
-                            android:text="No live section notices posted yet."
-                            android:textColor="?attr/colorOnSurface"
+                            android:text="Plan today. Build tomorrow."
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="13sp" />
                     </LinearLayout>
 
                     <Button
-                        android:id="@+id/btnPostNotice"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:id="@+id/btnSettings"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:contentDescription="Settings"
+                        android:insetLeft="0dp"
                         android:insetTop="0dp"
+                        android:insetRight="0dp"
                         android:insetBottom="0dp"
-                        android:minHeight="34dp"
-                        android:minWidth="0dp"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="Post"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:padding="0dp"
+                        android:text=""
+                        app:backgroundTint="?attr/colorSurface"
+                        app:cornerRadius="999dp"
+                        app:icon="@drawable/ic_nav_settings"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp"
+                        app:iconSize="20dp"
+                        app:iconTint="?attr/colorOnSurface" />
+
+                    <Button
+                        android:id="@+id/btnAccount"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="8dp"
+                        android:contentDescription="Account"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        android:text=""
+                        app:backgroundTint="?attr/colorSecondaryContainer"
+                        app:cornerRadius="999dp"
+                        app:icon="@drawable/ic_nav_user"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp"
+                        app:iconSize="20dp"
+                        app:iconTint="?attr/colorOnSecondaryContainer" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Pill Day Selector -->
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tabDays"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="16dp"
-                android:background="@android:color/transparent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cardNoticeBoard"
-                app:tabBackground="@android:color/transparent"
-                app:tabGravity="fill"
-                app:tabIndicator="@drawable/bg_tab_pill_selector"
-                app:tabIndicatorAnimationMode="elastic"
-                app:tabIndicatorColor="?attr/colorPrimary"
-                app:tabIndicatorFullWidth="true"
-                app:tabIndicatorGravity="stretch"
-                app:tabMode="scrollable"
-                app:tabPaddingEnd="16dp"
-                app:tabPaddingStart="16dp"
-                app:tabRippleColor="@android:color/transparent"
-                app:tabSelectedTextColor="?attr/colorOnPrimary"
-                app:tabTextColor="?attr/colorOnSurfaceVariant" />
+                <!-- AI Prompt Pill -->
+                <LinearLayout
+                    android:id="@+id/chatBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@drawable/bg_floating_dock"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="18dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="4dp">
 
-            <!-- Timeline Schedule List -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvEvents"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_marginTop="4dp"
-                android:clipToPadding="false"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="110dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tabDays" />
+                    <EditText
+                        android:id="@+id/etChat"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:fontFamily="sans-serif"
+                        android:hint="Ask AI to update schedule..."
+                        android:inputType="textCapSentences|textMultiLine"
+                        android:maxLines="2"
+                        android:paddingTop="10dp"
+                        android:paddingBottom="10dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="?attr/colorOnSurfaceVariant"
+                        android:textSize="13sp" />
 
-            <TextView
-                android:id="@+id/tvEmpty"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
-                android:letterSpacing="0.01"
-                android:text="No classes scheduled for this day"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="15sp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="@id/rvEvents"
-                app:layout_constraintEnd_toEndOf="@id/rvEvents"
-                app:layout_constraintStart_toStartOf="@id/rvEvents"
-                app:layout_constraintTop_toTopOf="@id/rvEvents" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                    <Button
+                        android:id="@+id/btnSend"
+                        style="@style/Widget.Fluxora.Button.Primary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="8dp"
+                        android:minHeight="38dp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Update"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
+                <!-- Quick-Action Chips Row -->
+                <HorizontalScrollView
+                    android:id="@+id/aiQuickActions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clipToPadding="false"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnImport"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minHeight="34dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:text="+ Scan Routine Photo"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="11sp"
+                            app:backgroundTint="?attr/colorSurface"
+                            app:cornerRadius="999dp" />
+
+                        <Button
+                            android:id="@+id/btnWhatsApp"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginStart="8dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minHeight="34dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:text="+ WhatsApp Sync"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="11sp"
+                            app:backgroundTint="?attr/colorSurface"
+                            app:cornerRadius="999dp" />
+
+                        <Button
+                            android:id="@+id/btnBubble"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginStart="8dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minHeight="34dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:text="+ Quick Bubble"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:textSize="11sp"
+                            app:backgroundTint="?attr/colorSecondaryContainer"
+                            app:cornerRadius="999dp" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <!-- LIVE SECTION NOTICE BOARD -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardNoticeBoard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="20dp"
+                    app:cardBackgroundColor="?attr/colorSurface"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="0dp"
+                    app:contentPadding="0dp"
+                    app:strokeColor="?attr/colorOutlineVariant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="14dp"
+                        android:paddingTop="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="10dp">
+
+                        <View
+                            android:layout_width="3dp"
+                            android:layout_height="28dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="?attr/colorTertiary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvNoticeHeader"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif"
+                                android:letterSpacing="0.04"
+                                android:text="LIVE SECTION NOTICE BOARD"
+                                android:textColor="?attr/colorPrimary"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvNoticeBoard"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:ellipsize="end"
+                                android:fontFamily="sans-serif"
+                                android:maxLines="2"
+                                android:text="No live section notices posted yet."
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/btnPostNotice"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minHeight="34dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:text="Post"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Pill Day Selector -->
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/tabDays"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@android:color/transparent"
+                    app:tabBackground="@android:color/transparent"
+                    app:tabGravity="fill"
+                    app:tabIndicator="@drawable/bg_tab_pill_selector"
+                    app:tabIndicatorAnimationMode="elastic"
+                    app:tabIndicatorColor="?attr/colorPrimary"
+                    app:tabIndicatorFullWidth="true"
+                    app:tabIndicatorGravity="stretch"
+                    app:tabMode="scrollable"
+                    app:tabPaddingEnd="16dp"
+                    app:tabPaddingStart="16dp"
+                    app:tabRippleColor="@android:color/transparent"
+                    app:tabSelectedTextColor="?attr/colorOnPrimary"
+                    app:tabTextColor="?attr/colorOnSurfaceVariant" />
+
+                <!-- Timeline Schedule List (Scrolls seamlessly inside NestedScrollView) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvEvents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="20dp" />
+
+                <TextView
+                    android:id="@+id/tvEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif"
+                    android:gravity="center"
+                    android:letterSpacing="0.01"
+                    android:paddingTop="48dp"
+                    android:paddingBottom="48dp"
+                    android:text="No classes scheduled for this day"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="15sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
         <!-- ================= PAGE 1: CALENDAR ================= -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="104dp">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -477,6 +472,7 @@
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="13sp" />
         </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
 
         <!-- ================= PAGE 2: LEDGER ================= -->
         <LinearLayout
